@@ -1,0 +1,7 @@
+data/mels
+data/*.csv
+.vscode/
+.ipynb_checkpoints/
+logs/
+.DS_Store
+**/__pycache__/

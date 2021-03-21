@@ -7,7 +7,7 @@ feature_extractor_params:
     f_max: 8000
     win_length: 400
     hop_length: 200
-    power: 1
+    power: 1.0
 
 shared:
   vocab: " .,!?abcdefghijklmnopqrstuvwxyz"

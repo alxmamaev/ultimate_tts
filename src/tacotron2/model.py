@@ -236,7 +236,7 @@ class Tacotron2(nn.Module):
 
         frame, attention_context, rnn_state, rnn_memory, alignment_state = self.decoder.get_inital_states(memory)
         frame = frame.unsqueeze(1)
-        mels = torch.cat((mels, frame), 1)[:,:-1]
+        mels = torch.cat((frame, mels), 1)[:,:-1]
 
         decoder_outputs = []
         alignments = []
@@ -244,13 +244,13 @@ class Tacotron2(nn.Module):
 
         for i in range(mels.shape[1]):
             output_frame, gate_output, alignment, attention_context, rnn_state, rnn_memory, alignment_state = self.decoder(mels[:,i], 
-                                                                                                                            mask,
-                                                                                                                            attention_context, 
-                                                                                                                            rnn_state, 
-                                                                                                                            rnn_memory, 
-                                                                                                                            alignment_state, 
-                                                                                                                            memory, 
-                                                                                                                            processed_memory)
+                                                                                                                           mask,
+                                                                                                                           attention_context, 
+                                                                                                                           rnn_state, 
+                                                                                                                           rnn_memory, 
+                                                                                                                           alignment_state, 
+                                                                                                                           memory, 
+                                                                                                                           processed_memory)
             alignments.append(alignment)
             
             decoder_outputs.append(output_frame)

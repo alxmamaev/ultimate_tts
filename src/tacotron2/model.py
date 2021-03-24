@@ -29,7 +29,7 @@ class LocalSensetiveAttention(nn.Module):
         energy = self.v(torch.tanh(processed_location_features + processed_query + processed_memory))
         energy = energy.squeeze(2)        
         
-        energy[mask] = float("-inf")
+        energy.data.masked_fill_(mask, float("-inf"))
         alignments = torch.softmax(energy, 1)
         
         next_state = alignment_state + alignments
@@ -100,7 +100,7 @@ class Prenet(nn.Module):
         out = X
         for layer in self.layers:
             out = layer(out)
-            # We are using dropout at thetest time 
+            # We are using dropout at the test time 
             out = torch.dropout(out, p=0.5, train=True)
 
         return out
@@ -145,7 +145,8 @@ class Encoder(nn.Module):
         
         self.lstm = nn.LSTM(encoder_embedding_size, 
                             encoder_embedding_size // 2, 
-                            bidirectional=True)
+                            bidirectional=True,
+                            batch_first=True)
 
 
     def forward(self, X):
@@ -199,12 +200,12 @@ class Decoder(nn.Module):
         
         return frame, attention_context, rnn_state, rnn_memory, alignment_state
 
-    def forward(self, input_frame, mask, attention_context, rnn_state, rnn_memory, alignment_state, memory, processed_memory):
+    def forward(self, input_frame, encoder_mask, attention_context, rnn_state, rnn_memory, alignment_state, memory, processed_memory):
         processed_frame = self.prenet(input_frame)
         rnn_input = torch.cat((processed_frame, attention_context), 1)
 
         rnn_state, rnn_memory = self.rnn(rnn_input, (rnn_state, rnn_memory))
-        attention_context, alignment, alignment_state = self.attention(rnn_state, alignment_state, memory, processed_memory, mask)
+        attention_context, alignment, alignment_state = self.attention(rnn_state, alignment_state, memory, processed_memory, encoder_mask)
 
         decoder_rnn_output = torch.cat((rnn_state, attention_context), 1)
         output_frame = self.proj(decoder_rnn_output)
@@ -230,7 +231,7 @@ class Tacotron2(nn.Module):
 
         self.postnet = Postnet(num_mels, decoder_embedding_size, postnet_n_convolutions, postnet_kernel_size)
 
-    def forward(self, texts, mask, mels):
+    def forward(self, texts, encoder_mask, decoder_mask, mels):
         memory = self.encoder(texts)
         processed_memory = self.decoder.attention.memory_layer(memory)
 
@@ -244,7 +245,7 @@ class Tacotron2(nn.Module):
 
         for i in range(mels.shape[1]):
             output_frame, gate_output, alignment, attention_context, rnn_state, rnn_memory, alignment_state = self.decoder(mels[:,i], 
-                                                                                                                           mask,
+                                                                                                                           encoder_mask,
                                                                                                                            attention_context, 
                                                                                                                            rnn_state, 
                                                                                                                            rnn_memory, 
@@ -256,12 +257,15 @@ class Tacotron2(nn.Module):
             decoder_outputs.append(output_frame)
             gate_outputs.append(gate_output)
 
-        decoder_outputs = torch.stack(decoder_outputs, 1)
-        
+        decoder_outputs = torch.stack(decoder_outputs, 1)      
         postnet_outputs = self.postnet(decoder_outputs.transpose(1, 2)).transpose(1, 2) + decoder_outputs
 
         alignments = torch.stack(alignments, 1)
         gate_outputs = torch.stack(gate_outputs, 1)
+
+        decoder_outputs.data.masked_fill_(decoder_mask, 0.0)
+        postnet_outputs.data.masked_fill_(decoder_mask, 0.0)
+        gate_outputs.data.masked_fill_(decoder_mask[:,:,[0]], 1e3)
 
         return decoder_outputs, postnet_outputs, alignments, gate_outputs
 

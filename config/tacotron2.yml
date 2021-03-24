@@ -1,12 +1,12 @@
 feature_extractor_params:
     sample_rate: 22050
-    audio_max_value: 32768
-    n_fft: 400
+    audio_max_value: 32768.0
+    n_fft: 1024
     n_mels: 80
     f_min: 80
     f_max: 8000
-    win_length: 400
-    hop_length: 200
+    win_length: 1024
+    hop_length: 256
     power: 1.0
 
 shared:
@@ -36,7 +36,7 @@ args:
 
 runner:
   _target_: TTSRunner
-  input_key: &model_input ["texts", "mask", "mels"]
+  input_key: &model_input ["texts", "encoder_mask", "decoder_mask", "mels"]
   output_key: &model_output "model_output"
   target_key: &model_target "targets"
   loss_key: &model_loss "loss"
@@ -69,7 +69,7 @@ model:
 
 stages:
   train:
-    num_epochs: 10
+    num_epochs: 40
 
     loaders: &loaders
       batch_size: 3
@@ -80,7 +80,7 @@ stages:
 
     optimizer:
       _target_: Adam
-      lr: 0.0001
+      lr: 0.001
 
     callbacks: &callbacks
       loss:
@@ -91,8 +91,8 @@ stages:
       optimizer:
         _target_: OptimizerCallback
         metric_key: *model_loss
+        grad_clip_fn: clip_grad_value_
         grad_clip_params:
-          fn_name: clip_grad_value_
           clip_value: 1.0
       alignments:
         _target_: TacotronOutputLogger

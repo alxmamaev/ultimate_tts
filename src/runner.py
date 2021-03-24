@@ -44,7 +44,3 @@ class TTSRunner(SupervisedConfigRunner):
             loaders_params=loaders_params,
         )
         return loaders
-
-    # def on_batch_start(self, runner: "IRunner"):
-    #     self.batch = self._process_input_list(self.batch)
-    #     super().on_batch_start(runner)

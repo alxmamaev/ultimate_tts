@@ -14,22 +14,20 @@ class TacotronOutputLogger(Callback):
         super().__init__(CallbackOrder.metric, CallbackNode.all)
         self.input_key = input_key
 
-        self.model_output = [None, None, None]
-        self.model_output_names = ["decoder_output", "postnet_output", "alignment"]
+    def on_loader_end(self, runner):
+        item_index = 0
 
-    def on_batch_end(self, runner):
-        for i in range(3):
-            output = runner.batch[self.input_key][i].detach().cpu()[0]
+        for i, name in enumerate(["decoder_output", "postnet_output", "alignment"]):
+            output = runner.batch[self.input_key][i].detach().cpu()[item_index]
             output = np.transpose(output)
 
-            self.model_output[i] = output
+            if name == "alignment":
+                output = output[:runner.batch["text_lenghts"][item_index], 
+                                :runner.batch["mel_lenghts"][item_index]]
 
-    def on_loader_end(self, runner):
-        for (name, output) in zip(self.model_output_names, self.model_output):
             fig = plt.figure(figsize=(12, 12))
-            plt.imshow(output, interpolation="nearest")
-            plt.colorbar()
+            plt.imshow(output)
             plt.ion()
 
             image = render_figure_to_array(fig)
-            runner.log_image(tag=name, image=image, scope="loader")
+            runner.log_image(tag=name, image=image, scope="tacotron_output")

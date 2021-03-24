@@ -11,7 +11,8 @@ def text_mel_collate_fn(data):
     mels = [i[1] for i in data]
 
     padded_texts = pad_sequence(texts, batch_first=True)
-    max_mel_length = max(i.shape[0] for i in mels)
+    mel_lenghts = [i.shape[0] for i in mels]
+    max_mel_length = max(mel_lenghts)
     
     padded_mels = torch.zeros((len(mels), max_mel_length, 80))
     gates_target = torch.zeros((len(mels), max_mel_length))
@@ -20,14 +21,22 @@ def text_mel_collate_fn(data):
         padded_mels[i][:mel.shape[0]] = mel
         gates_target[i][mel.shape[0] - 1:] = 1
 
-    mask = torch.zeros_like(padded_texts).bool()
-    for l in text_lenghts:
-        mask[:,l:] = 1
+    encoder_mask = torch.zeros_like(padded_texts).bool()
+    for i, l in enumerate(text_lenghts):
+        encoder_mask[i,l:] = 1
+
+    decoder_mask = torch.zeros_like(padded_mels).bool()
+    for i, l in enumerate(mel_lenghts):
+        decoder_mask[i,l:] = 1
+
 
     batch = {
         "texts": padded_texts,
-        "mask": mask,
+        "encoder_mask": encoder_mask,
+        "decoder_mask": decoder_mask,
         "mels": padded_mels,
+        "text_lenghts": text_lenghts,
+        "mel_lenghts": mel_lenghts,
         "targets": [padded_mels, gates_target]
     }
 

@@ -1,9 +1,9 @@
-from tacotron2.model import Tacotron2
-from tacotron2.loss import Tacotron2Loss
-from dataset import TextMelDataset
-from catalyst.registry import Registry, REGISTRY
-from runner import TTSRunner
-from callbacks.tacotron_output_logger import TacotronOutputLogger
+from .tts.models import Tacotron2
+from .tts.layers.losses import Tacotron2Loss
+from .callbacks import TacotronOutputLogger
+from .runner import TTSRunner
+
+from catalyst.registry import Registry
 
 
 Registry(TTSRunner)

@@ -2,28 +2,50 @@ feature_extractor_params:
     sample_rate: 22050
     audio_max_value: 32768.0
     n_fft: 1024
-    n_mels: 80
+    n_mels: &n_mels 80
     f_min: 80
     f_max: 8000
     win_length: 1024
     hop_length: 256
     power: 1.0
 
-shared:
-  vocab: " .,!?abcdefghijklmnopqrstuvwxyz"
+data_params:
   train_metadata: "./data/train_metadata.csv"
   valid_metadata: "./data/valid_metadata.csv"
   datapath: "./data/mels"
-  seed: &seed 42
-  valid_loader: &valid_loader valid
-  valid_metric: &valid_metric loss
-  minimize_valid_metric: &minimize_valid_metric True
+
+training_params:
+  vocab: &vocab " .,!?abcdefghijklmnopqrstuvwxyz"
+  num_epochs: &num_epochs 400
+  batch_size: &batch_size 32
+  num_workers: &num_workers 0
+  
+  loss_fn: &loss_fn Tacotron2Loss
+  optimizer_fn: &optimizer_fn Adam
+  lr: &lr 0.001
+  grad_clip_value: &grad_clip_value 1.0
+
+model:
+  _target_: Tacotron2
+  vocab_size: 32
+  num_mels: *n_mels
+  vocab_embedding_size: 512
+  encoder_embedding_size: 512
+  encoder_n_convolutions: 3
+  encoder_kernel_size: 5
+  prenet_layer_size: 256
+  decoder_embedding_size: 512
+  attention_embedding_size: 128
+  attention_location_n_filters: 32
+  attention_location_kernel_size: 31
+  postnet_n_convolutions: 5
+  postnet_kernel_size: 5
 
 
 args:
   expdir: "src"
   logdir: &logdir "./logs/"
-  seed: *seed
+  seed: 42
   distributed: False
   apex: False
   amp: False
@@ -51,38 +73,22 @@ loggers:
     _target_: TensorboardLogger
     logdir: *logdir
 
-model:
-  _target_: Tacotron2
-  vocab_size: 32
-  num_mels: 80
-  vocab_embedding_size: 512
-  encoder_embedding_size: 512
-  encoder_n_convolutions: 3
-  encoder_kernel_size: 5
-  prenet_layer_size: 256
-  decoder_embedding_size: 512
-  attention_embedding_size: 128
-  attention_location_n_filters: 32
-  attention_location_kernel_size: 31
-  postnet_n_convolutions: 5
-  postnet_kernel_size: 5
-
 stages:
   train:
-    num_epochs: 40
+    num_epochs: *num_epochs
 
-    loaders: &loaders
-      batch_size: 3
-      num_workers: 0
+    loaders:
+      batch_size: *batch_size
+      num_workers: *num_workers
 
     criterion:
-      _target_: Tacotron2Loss
+      _target_: *loss_fn
 
     optimizer:
-      _target_: Adam
-      lr: 0.001
+      _target_: *optimizer_fn
+      lr: *lr
 
-    callbacks: &callbacks
+    callbacks:
       loss:
         _target_: CriterionCallback
         input_key: *model_output
@@ -93,16 +99,16 @@ stages:
         metric_key: *model_loss
         grad_clip_fn: clip_grad_value_
         grad_clip_params:
-          clip_value: 1.0
+          clip_value: *grad_clip_value
       alignments:
         _target_: TacotronOutputLogger
         input_key: *model_output
       saver:
         _target_: CheckpointCallback
         logdir: *logdir
-        loader_key: *valid_loader
-        metric_key: *valid_metric
-        minimize: *minimize_valid_metric
+        loader_key: valid
+        metric_key: loss
+        minimize: True
         use_logdir_postfix: True
       verbose:
         _target_: TqdmCallback

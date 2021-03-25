@@ -14,19 +14,19 @@ class TTSRunner(SupervisedConfigRunner):
     def get_datasets(self, stage: str):
         datasets = OrderedDict()
 
-        vocab = self._config["shared"]["vocab"]
+        vocab = self._config["training_params"]["vocab"]
 
         tokenizer = CharTokenizer(vocab)
         cleaners = [LowerCaseCleaner(), VocabCleaner(vocab)]
         text_preprocessor = TextPreprocesser(tokenizer, cleaners=cleaners)
 
-        datasets["train"] = TextMelDataset(self._config["shared"]["train_metadata"],
-                                           self._config["shared"]["datapath"],
+        datasets["train"] = TextMelDataset(self._config["data_params"]["train_metadata"],
+                                           self._config["data_params"]["datapath"],
                                            text_preprocessor)
 
 
-        datasets["valid"] = TextMelDataset(self._config["shared"]["valid_metadata"],
-                                           self._config["shared"]["datapath"],
+        datasets["valid"] = TextMelDataset(self._config["data_params"]["valid_metadata"],
+                                           self._config["data_params"]["datapath"],
                                            text_preprocessor)
 
         return datasets

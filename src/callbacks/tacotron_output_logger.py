@@ -31,3 +31,4 @@ class TacotronOutputLogger(Callback):
 
             image = render_figure_to_array(fig)
             runner.log_image(tag=name, image=image, scope="tacotron_output")
+            

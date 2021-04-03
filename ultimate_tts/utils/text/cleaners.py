@@ -16,3 +16,6 @@ class VocabCleaner:
         text = "".join(i for i in text if i in self.vocab)
 
         return text
+
+
+__all__ = ["LowerCaseCleaner", "VocabCleaner"]

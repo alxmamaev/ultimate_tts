@@ -1,6 +1,6 @@
 feature_extractor_params:
     sample_rate: 22050
-    audio_max_value: 32768.0
+    wav_max_value: 32768.0
     n_fft: 1024
     n_mels: &n_mels 80
     f_min: 80
@@ -9,15 +9,10 @@ feature_extractor_params:
     hop_length: 256
     power: 1.0
 
-data_params:
-  train_metadata: "./data/train_metadata.csv"
-  valid_metadata: "./data/valid_metadata.csv"
-  datapath: "./data/mels"
-
 training_params:
   vocab: &vocab " .,!?abcdefghijklmnopqrstuvwxyz"
   num_epochs: &num_epochs 400
-  batch_size: &batch_size 32
+  batch_size: &batch_size 2
   num_workers: &num_workers 0
   
   loss_fn: &loss_fn Tacotron2Loss
@@ -25,10 +20,22 @@ training_params:
   lr: &lr 0.001
   grad_clip_value: &grad_clip_value 1.0
 
+data_params:
+  train_metadata: "./data/train_metadata.csv"
+  valid_metadata: "./data/valid_metadata.csv"
+  mels_datapath: "./data/mels"
+  tokenizer: 
+    _target_: CharTokenizer
+    vocab: *vocab
+  cleaners:
+    - _target_: LowerCaseCleaner
+    - _target_: VocabCleaner
+      vocab: *vocab
+
 model:
   _target_: Tacotron2
   vocab_size: 32
-  num_mels: *n_mels
+  n_mels: *n_mels
   vocab_embedding_size: 512
   encoder_embedding_size: 512
   encoder_n_convolutions: 3
@@ -43,7 +50,7 @@ model:
 
 
 args:
-  expdir: "src"
+  expdir: "ultimate_tts"
   logdir: &logdir "./logs/"
   seed: 42
   distributed: False
@@ -53,14 +60,14 @@ args:
   timeit: False
   check: False
   overfit: False
-  deterministic: False
+  deterministic: True
   benchmark: False
 
 runner:
   _target_: TTSRunner
-  input_key: &model_input ["texts", "encoder_mask", "decoder_mask", "mels"]
-  output_key: &model_output "model_output"
-  target_key: &model_target "targets"
+  input_key: &model_input ["texts", "encoder_mask", "mels_target"]
+  output_key: &model_output ["decoder_outputs", "postnet_outputs", "alignments", "gate_outputs"]
+  target_key: &model_target ["mels_target", "decoder_mask", "gates_target"]
   loss_key: &model_loss "loss"
 
 engine:
@@ -101,8 +108,8 @@ stages:
         grad_clip_params:
           clip_value: *grad_clip_value
       alignments:
-        _target_: TacotronOutputLogger
-        input_key: *model_output
+        _target_: TTSOutputsLogger
+        outputs_keys: ["decoder_outputs", "postnet_outputs", "alignments"]
       saver:
         _target_: CheckpointCallback
         logdir: *logdir

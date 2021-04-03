@@ -17,3 +17,6 @@ class TextPreprocesser:
         text = self.tokenizer.sequence_to_text(sequence)
 
         return text
+
+
+__all__ = ["TextPreprocesser"]

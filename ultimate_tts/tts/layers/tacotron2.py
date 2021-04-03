@@ -41,13 +41,13 @@ class LocalSensetiveAttention(nn.Module):
 
 
 class Postnet(nn.Module):
-    def __init__(self, num_mels, embedding_size, n_convolutions, kernel_size):
+    def __init__(self, n_mels, embedding_size, n_convolutions, kernel_size):
         super().__init__()
 
         self.convolutions = nn.ModuleList()
 
         self.convolutions.append(nn.Sequential(
-            nn.Conv1d(num_mels, embedding_size, kernel_size, padding=(kernel_size - 1) // 2),
+            nn.Conv1d(n_mels, embedding_size, kernel_size, padding=(kernel_size - 1) // 2),
             nn.BatchNorm1d(embedding_size),
             nn.ReLU(),
             nn.Dropout(p=0.5)
@@ -62,8 +62,8 @@ class Postnet(nn.Module):
             ))
 
         self.convolutions.append(nn.Sequential(
-            nn.Conv1d(embedding_size, num_mels, kernel_size, padding=(kernel_size - 1) // 2),
-            nn.BatchNorm1d(num_mels),
+            nn.Conv1d(embedding_size, n_mels, kernel_size, padding=(kernel_size - 1) // 2),
+            nn.BatchNorm1d(n_mels),
             nn.ReLU(),
             nn.Dropout(p=0.5)
         ))
@@ -81,10 +81,10 @@ class Postnet(nn.Module):
 
 
 class Prenet(nn.Module):
-    def __init__(self, num_mels, layers_sizes):
+    def __init__(self, n_mels, layers_sizes):
         super().__init__()
 
-        input_sizes = [num_mels] + layers_sizes[:-1]
+        input_sizes = [n_mels] + layers_sizes[:-1]
         output_sizes = layers_sizes
 
         self.layers = nn.ModuleList()
@@ -167,22 +167,22 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, num_mels, prenet_layer_size, 
+    def __init__(self, n_mels, prenet_layer_size, 
                 encoder_embedding_size, decoder_embedding_size, 
                 attention_embedding_size, attention_location_n_filters, 
                 attention_location_kernel_size):
         super().__init__()
 
-        self.num_mels = num_mels
+        self.n_mels = n_mels
         self.encoder_embedding_size = encoder_embedding_size
         self.decoder_embedding_size = decoder_embedding_size
 
-        self.prenet = Prenet(num_mels=num_mels, layers_sizes=[prenet_layer_size, prenet_layer_size])
+        self.prenet = Prenet(n_mels=n_mels, layers_sizes=[prenet_layer_size, prenet_layer_size])
         self.rnn = nn.LSTMCell(prenet_layer_size + encoder_embedding_size, 
                               decoder_embedding_size)
         self.attention = LocalSensetiveAttention(attention_embedding_size, decoder_embedding_size, encoder_embedding_size, attention_location_kernel_size, attention_location_n_filters)
         self.proj = nn.Linear(decoder_embedding_size + encoder_embedding_size, 
-                              num_mels)
+                              n_mels)
 
         self.gate_layer = nn.Linear(decoder_embedding_size + encoder_embedding_size, 1)
 
@@ -192,7 +192,7 @@ class Decoder(nn.Module):
 
         model_device = list(self.parameters())[0].device
 
-        frame = torch.zeros(batch_size, self.num_mels).to(model_device)
+        frame = torch.zeros(batch_size, self.n_mels).to(model_device)
         attention_context = torch.zeros(batch_size, self.encoder_embedding_size).to(model_device)
         rnn_state = torch.zeros(batch_size, self.decoder_embedding_size).to(model_device)
         rnn_memory = torch.zeros(batch_size, self.decoder_embedding_size).to(model_device)
@@ -211,5 +211,6 @@ class Decoder(nn.Module):
         output_frame = self.proj(decoder_rnn_output)
 
         gate_output = self.gate_layer(decoder_rnn_output)
+        gate_output = gate_output.squeeze(1)
 
         return output_frame, gate_output, alignment, attention_context, rnn_state, rnn_memory, alignment_state

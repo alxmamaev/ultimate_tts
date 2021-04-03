@@ -3,32 +3,30 @@ from catalyst.core.callback import Callback, CallbackNode, CallbackOrder
 from catalyst.metrics._confusion_matrix import ConfusionMatrixMetric
 from matplotlib import pyplot as plt
 from catalyst.contrib.utils.visualization import render_figure_to_array
+from typing import List
 
 
-class TacotronOutputLogger(Callback):
+class TTSOutputsLogger(Callback):
     def __init__(
         self,
-        input_key: str
+        outputs_keys: List[str]
     ):
-        """Callback initialisation."""
         super().__init__(CallbackOrder.metric, CallbackNode.all)
-        self.input_key = input_key
+        self.outputs_keys = outputs_keys
 
     def on_loader_end(self, runner):
         item_index = 0
 
-        for i, name in enumerate(["decoder_output", "postnet_output", "alignment"]):
-            output = runner.batch[self.input_key][i].detach().cpu()[item_index]
+        for name in self.outputs_keys:
+            output = runner.batch[name].detach().cpu()[item_index]
             output = np.transpose(output)
 
-            if name == "alignment":
-                output = output[:runner.batch["text_lenghts"][item_index], 
-                                :runner.batch["mel_lenghts"][item_index]]
-
-            fig = plt.figure(figsize=(12, 12))
+            fig = plt.figure(figsize=(12, 6))
             plt.imshow(output)
             plt.ion()
 
             image = render_figure_to_array(fig)
             runner.log_image(tag=name, image=image, scope="tacotron_output")
-            
+
+
+__all__ = ["TTSOutputsLogger"]

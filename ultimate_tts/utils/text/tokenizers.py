@@ -31,3 +31,6 @@ class CharTokenizer:
 
     def sequence_to_text(self, sequence):
         return "".join(sequence)
+
+
+__all__ = ["CharTokenizer"]

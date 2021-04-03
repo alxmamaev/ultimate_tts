@@ -1,1 +1,121 @@
-# Soon
+feature_extractor_params:
+    sample_rate: 22050
+    wav_max_value: 32768.0
+    n_fft: 1024
+    n_mels: &n_mels 80
+    f_min: 80
+    f_max: 8000
+    win_length: 1024
+    hop_length: 256
+    power: 1.0
+
+training_params:
+  vocab: &vocab " .,!?abcdefghijklmnopqrstuvwxyz"
+  num_epochs: &num_epochs 400
+  batch_size: &batch_size 2
+  num_workers: &num_workers 0
+  
+  loss_fn: &loss_fn FastSpeechLoss
+  optimizer_fn: &optimizer_fn Adam
+  lr: &lr 0.001
+  grad_clip_value: &grad_clip_value 1.0 # Does it needs in fastspeech?
+
+data_params:
+  train_metadata: "./data/train_metadata.csv"
+  valid_metadata: "./data/valid_metadata.csv"
+  mels_datapath: "./data/mels"
+  durations_datapath: "./data/durations"
+  tokenizer: 
+    _target_: CharTokenizer
+    vocab: *vocab
+  cleaners:
+    - _target_: LowerCaseCleaner
+    - _target_: VocabCleaner
+      vocab: *vocab
+
+model:
+  _target_: FastSpeech
+  vocab_size: 32
+  n_mels: *n_mels
+  embedding_size: 512
+  n_layers: 3
+  attention_num_heads: 8
+  transformer_conv_kernel_size: 3
+  embedding_dropout: 0.1
+  attention_dropout: 0.1
+  layers_dropout: 0.1
+  duration_predictor_filter_size: 256
+  duration_predictor_kernel_size: 3
+  duration_predictor_dropout: 0.1
+
+
+args:
+  expdir: "ultimate_tts"
+  logdir: &logdir "./logs/"
+  seed: 42
+  distributed: False
+  apex: False
+  amp: False
+  verbose: False
+  timeit: False
+  check: False
+  overfit: False
+  deterministic: True
+  benchmark: False
+
+runner:
+  _target_: TTSRunner
+  input_key: &model_input ["texts", "target_durations", "encoder_mask", "decoder_mask"]
+  output_key: &model_output ["decoder_outputs", "durations_outputs", "alignments"]
+  target_key: &model_target ["mels_target", "target_durations", "encoder_mask", "decoder_mask"]
+  loss_key: &model_loss "loss"
+
+engine:
+  _target_: DeviceEngine
+
+loggers:
+  console:
+    _target_: ConsoleLogger
+  tensorboard:
+    _target_: TensorboardLogger
+    logdir: *logdir
+
+stages:
+  train:
+    num_epochs: *num_epochs
+
+    loaders:
+      batch_size: *batch_size
+      num_workers: *num_workers
+
+    criterion:
+      _target_: *loss_fn
+
+    optimizer:
+      _target_: *optimizer_fn
+      lr: *lr
+
+    callbacks:
+      loss:
+        _target_: CriterionCallback
+        input_key: *model_output
+        target_key: *model_target
+        metric_key: *model_loss
+      optimizer:
+        _target_: OptimizerCallback
+        metric_key: *model_loss
+        grad_clip_fn: clip_grad_value_
+        grad_clip_params:
+          clip_value: *grad_clip_value
+      alignments:
+        _target_: TTSOutputsLogger
+        outputs_keys: ["decoder_outputs"]
+      saver:
+        _target_: CheckpointCallback
+        logdir: *logdir
+        loader_key: valid
+        metric_key: loss
+        minimize: True
+        use_logdir_postfix: True
+      verbose:
+        _target_: TqdmCallback

@@ -29,17 +29,14 @@ class FastSpeechLoss(nn.Module):
 
         self.mse = nn.MSELoss()
 
-    def forward(self, model_output, target):
-        output_mels, durations, alignments = model_output
-        mel_target, target_durations, encoder_mask, decoder_mask = target
-
-        output_mels.data.masked_fill_(decoder_mask, 0.0)
+    def forward(self, decoder_outputs, durations, alignments, mels_target, target_durations, encoder_mask, decoder_mask):
+        decoder_outputs.data.masked_fill_(decoder_mask, 0.0)
         target_durations.data.masked_fill_(encoder_mask[:, :, 0], 0)
 
-        mel_target.requires_grad = False
+        mels_target.requires_grad = False
         target_durations.requires_grad = False
 
-        mel_loss = self.mse(output_mels, mel_target) 
+        mel_loss = self.mse(decoder_outputs, mels_target) 
         duration_loss = self.mse(durations, target_durations)
 
         return mel_loss + duration_loss

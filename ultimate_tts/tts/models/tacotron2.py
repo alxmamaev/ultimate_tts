@@ -54,8 +54,8 @@ class Tacotron2(nn.Module):
         return decoder_outputs, postnet_outputs, alignments, gate_outputs
 
     @torch.no_grad()
-    def inference(self, input_tokens, mask, gate_th=0.5, max_decoder_steps=1000):
-        memory = self.encoder(input_tokens)
+    def inference(self, texts, encoder_mask, gate_th=0.5, max_decoder_steps=1000):
+        memory = self.encoder(texts)
         processed_memory = self.decoder.attention.memory_layer(memory)
 
         frame, attention_context, rnn_state, rnn_memory, alignment_state = self.decoder.get_inital_states(memory)
@@ -63,13 +63,13 @@ class Tacotron2(nn.Module):
         decoder_outputs = []
         alignments = []
         decoder_mask = []
-        gates = torch.zeros(input_tokens.shape[0], dtype=torch.bool)
+        gates = torch.zeros(texts.shape[0], dtype=torch.bool)
         current_step = 0
 
 
         while (not gates.all()) and (current_step < max_decoder_steps):
             frame, gate_output, alignment, attention_context, rnn_state, rnn_memory, alignment_state = self.decoder(frame, 
-                                                                                                                    mask,
+                                                                                                                    encoder_mask,
                                                                                                                     attention_context, 
                                                                                                                     rnn_state, 
                                                                                                                     rnn_memory, 
@@ -89,4 +89,4 @@ class Tacotron2(nn.Module):
 
         alignments = torch.stack(alignments, 1)
         
-        return decoder_outputs, postnet_outputs, alignments, decoder_mask
+        return postnet_outputs, alignments, decoder_mask

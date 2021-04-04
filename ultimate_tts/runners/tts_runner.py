@@ -12,9 +12,13 @@ from catalyst.registry import REGISTRY
 
 
 class TTSRunner(SupervisedConfigRunner):
-    def get_datasets(self, stage: str):
-        datasets = OrderedDict()
+    def get_collate_fn(self):
+        data_params = self._config["data_params"]
+        collate_fn = REGISTRY.get(data_params["collate_fn"])
 
+        return collate_fn
+
+    def get_text_preprocessor(self):
         data_params = self._config["data_params"]
 
         tokenizer = REGISTRY.get_from_params(**data_params["tokenizer"])
@@ -22,6 +26,13 @@ class TTSRunner(SupervisedConfigRunner):
 
         text_preprocessor = TextPreprocesser(tokenizer, cleaners=cleaners)
 
+        return text_preprocessor
+
+    def get_datasets(self, stage: str):
+        datasets = OrderedDict()
+        data_params = self._config["data_params"]
+        
+        text_preprocessor = self.get_text_preprocessor()
         datasets["train"] = TextMelDataset(text_preprocessor, 
                                            data_params["train_metadata"],
                                            data_params["mels_datapath"],
@@ -34,9 +45,10 @@ class TTSRunner(SupervisedConfigRunner):
 
         return datasets
 
+
     def get_loaders(self, stage: str):
         loader_params = dict(self._stage_config[stage]["loaders"])
-        loader_params["collate_fn"] = text_mel_collate_fn
+        loader_params["collate_fn"] = self.get_collate_fn()
 
         loaders_params = {"valid": copy(loader_params), 
                           "train": copy(loader_params)}

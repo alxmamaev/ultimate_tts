@@ -24,6 +24,7 @@ data_params:
   train_metadata: "./data/train_metadata.csv"
   valid_metadata: "./data/valid_metadata.csv"
   mels_datapath: "./data/mels"
+  collate_fn: text_mel_collate_fn
   tokenizer: 
     _target_: CharTokenizer
     vocab: *vocab
@@ -48,6 +49,9 @@ model:
   postnet_n_convolutions: 5
   postnet_kernel_size: 5
 
+inference:
+  output_key: ["mels", "alignments", "durations"]
+  mel_key: "mels"
 
 args:
   expdir: "ultimate_tts"

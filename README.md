@@ -7,6 +7,6 @@
 * -Tacotron-
 * Tacotron2 (Paper)
 * -Tacotron2-nvidia-
-* -FastSpeech-
+* -FastSpeech
 * -FastPitch-
 * -GlowTTS-

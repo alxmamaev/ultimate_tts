@@ -54,7 +54,7 @@ class Tacotron2(nn.Module):
         return decoder_outputs, postnet_outputs, alignments, gate_outputs
 
     @torch.no_grad()
-    def inference(self, texts, encoder_mask, gate_th=0.5, max_decoder_steps=1000):
+    def _inference(self, texts, encoder_mask, gate_th=0.5, max_decoder_steps=1000):
         memory = self.encoder(texts)
         processed_memory = self.decoder.attention.memory_layer(memory)
 
@@ -88,5 +88,15 @@ class Tacotron2(nn.Module):
         postnet_outputs = self.postnet(decoder_outputs.transpose(1, 2)).transpose(1, 2) + decoder_outputs
 
         alignments = torch.stack(alignments, 1)
+        
+        return postnet_outputs, alignments, decoder_mask
+
+    @torch.no_grad()
+    def inference(self, texts, encoder_mask, mels_target=None, gate_th=0.5, max_decoder_steps=1000, **kwargs):
+        if mels_target is None:
+            postnet_outputs, alignments, decoder_mask = self._inference(texts, encoder_mask, gate_th, max_decoder_steps)
+        else:
+            # For ground truth alignment
+            decoder_outputs, postnet_outputs, alignments, decoder_mask = self.forward(texts, encoder_mask, mels_target)
         
         return postnet_outputs, alignments, decoder_mask

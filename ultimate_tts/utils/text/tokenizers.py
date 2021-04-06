@@ -33,4 +33,16 @@ class CharTokenizer:
         return "".join(sequence)
 
 
-__all__ = ["CharTokenizer"]
+class SpaceSplitTokenizer:
+    def sequence_to_ids(self, sequence):
+        sequence_ids = []
+
+        sequence = sequence.split(" ")
+
+        for c in sequence:
+            sequence_ids.append(self.char2id[c])
+        
+        return sequence_ids
+
+
+__all__ = ["CharTokenizer", "SpaceSplitTokenizer"]

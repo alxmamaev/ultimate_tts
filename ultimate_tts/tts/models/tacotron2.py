@@ -11,7 +11,7 @@ class Tacotron2(nn.Module):
                 attention_embedding_size=128, attention_location_n_filters=32, attention_location_kernel_size=31, 
                 postnet_n_convolutions=5, postnet_kernel_size=5):
         super().__init__()
-        self.encoder = Encoder(vocab_size, vocab_embedding_size, 
+        self.encoder = Encoder(vocab_size + 1, vocab_embedding_size, 
                                encoder_embedding_size, encoder_n_convolutions, 
                                encoder_kernel_size)
         self.decoder = Decoder(n_mels, prenet_layer_size, encoder_embedding_size, decoder_embedding_size,

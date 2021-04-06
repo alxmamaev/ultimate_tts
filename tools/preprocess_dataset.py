@@ -41,7 +41,7 @@ def main(args):
     vad_front = None if trim_front_params is None else taudio.transforms.Vad(sample_rate=feature_extractor_params["sample_rate"], **trim_front_params)
     vad_back = None if trim_back_params is None else taudio.transforms.Vad(sample_rate=feature_extractor_params["sample_rate"], **trim_back_params)
 
-    with open(args.metadata) as f:
+    with open(args.metadata, encoding="utf-8") as f:
         lines = f.readlines()
 
     input_datapath = Path(args.datapath)
@@ -50,10 +50,10 @@ def main(args):
     mels_datapath = Path(data_params["mels_datapath"])
     wavs_datapath = Path(data_params["wavs_datapath"]) if data_params.get("wavs_datapath", False) else None
 
-    with open(train_metadata_path, "w") as f:
+    with open(train_metadata_path, "w", encoding="utf-8") as f:
         f.writelines(lines[args.valid_size:])
 
-    with open(valid_metadata_path, "w") as f:
+    with open(valid_metadata_path, "w", encoding="utf-8") as f:
         f.writelines(lines[:args.valid_size])
         
     for line in tqdm(lines):

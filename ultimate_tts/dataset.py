@@ -39,7 +39,7 @@ class TextMelDataset(Dataset):
     def __init__(self, text_preprocessor, metadata_path, mels_datapath, durations_datapath=None):
         self.metadata = []
 
-        with open(metadata_path) as f:
+        with open(metadata_path, "r", encoding="utf-8") as f:
             for line in f:
                 filename, text = line.strip().split("|")[:2]
                 self.metadata.append((filename, text))

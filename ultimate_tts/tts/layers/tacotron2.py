@@ -5,7 +5,7 @@ from torch.nn.modules.batchnorm import BatchNorm1d
 from torch.nn.modules.dropout import Dropout
 
 
-class LocalSensetiveAttention(nn.Module):
+class LocationSensetiveAttention(nn.Module):
     def __init__(self, embedding_size, query_size, memory_size, kernel_size, num_filers):
         super().__init__()
 
@@ -41,7 +41,7 @@ class LocalSensetiveAttention(nn.Module):
 
 
 class Postnet(nn.Module):
-    def __init__(self, n_mels, embedding_size, n_convolutions, kernel_size):
+    def __init__(self, n_mels, embedding_size, n_convolutions, kernel_size, dropout_rate):
         super().__init__()
 
         self.convolutions = nn.ModuleList()
@@ -50,7 +50,7 @@ class Postnet(nn.Module):
             nn.Conv1d(n_mels, embedding_size, kernel_size, padding=(kernel_size - 1) // 2),
             nn.BatchNorm1d(embedding_size),
             nn.ReLU(),
-            nn.Dropout(p=0.5)
+            nn.Dropout(p=dropout_rate)
         ))
 
         for _ in range(n_convolutions - 2):
@@ -58,14 +58,14 @@ class Postnet(nn.Module):
                 nn.Conv1d(embedding_size, embedding_size, kernel_size, padding=(kernel_size - 1) // 2),
                 nn.BatchNorm1d(embedding_size),
                 nn.ReLU(),
-                nn.Dropout(p=0.5)
+                nn.Dropout(p=dropout_rate)
             ))
 
         self.convolutions.append(nn.Sequential(
             nn.Conv1d(embedding_size, n_mels, kernel_size, padding=(kernel_size - 1) // 2),
             nn.BatchNorm1d(n_mels),
             nn.ReLU(),
-            nn.Dropout(p=0.5)
+            nn.Dropout(p=dropout_rate)
         ))
 
 
@@ -76,17 +76,17 @@ class Postnet(nn.Module):
 
         return out
 
-    def inference(self, X):
-        pass
-
 
 class Prenet(nn.Module):
-    def __init__(self, n_mels, layers_sizes):
+    def __init__(self, n_mels, n_layers, embedding_size, dropout_rate):
         super().__init__()
+
+        layers_sizes = [embedding_size for i in range(n_layers)]
 
         input_sizes = [n_mels] + layers_sizes[:-1]
         output_sizes = layers_sizes
-
+        
+        self.dropout_rate = dropout_rate
         self.layers = nn.ModuleList()
 
         for input_size, output_size in zip(input_sizes, output_sizes):
@@ -101,15 +101,15 @@ class Prenet(nn.Module):
         for layer in self.layers:
             out = layer(out)
             # We are using dropout at the test time 
-            out = torch.dropout(out, p=0.5, train=True)
+            out = torch.dropout(out, p=self.dropout_rate, train=True)
 
         return out
 
 
 class Encoder(nn.Module):
     def __init__(self, vocab_size, vocab_embedding_size, 
-                encoder_embedding_size, n_convolutions, 
-                kernel_size):
+                encoder_embedding_size, 
+                n_convolutions, kernel_size, dropout_rate):
         assert encoder_embedding_size % 2 == 0, "encoder_embedding_size must be divisible by 2"
         
         super().__init__()
@@ -122,24 +122,26 @@ class Encoder(nn.Module):
                 nn.Conv1d(vocab_embedding_size, 
                           encoder_embedding_size,
                           kernel_size,
-                          padding = (kernel_size - 1) // 2),
+                          padding=(kernel_size - 1) // 2,
+                          bias=False),
                 
                 nn.BatchNorm1d(encoder_embedding_size),
                 nn.ReLU(),
-                nn.Dropout(p=0.5)
+                nn.Dropout(p=dropout_rate)
             )
         )
 
-        for _ in range(n_convolutions -1):
+        for _ in range(n_convolutions - 1):
             conv_layer = nn.Sequential(
                 nn.Conv1d(encoder_embedding_size, 
                           encoder_embedding_size,
                           kernel_size,
-                          padding = (kernel_size - 1) // 2),
+                          padding=(kernel_size - 1) // 2,
+                          ),
                 
                 nn.BatchNorm1d(encoder_embedding_size),
                 nn.ReLU(),
-                nn.Dropout(p=0.5)
+                nn.Dropout(p=dropout_rate)
             )
             self.convolutions.append(conv_layer)
         
@@ -162,25 +164,40 @@ class Encoder(nn.Module):
 
         return out
 
-    def inference(self, X):
-        pass
-
 
 class Decoder(nn.Module):
-    def __init__(self, n_mels, prenet_layer_size, 
-                encoder_embedding_size, decoder_embedding_size, 
-                attention_embedding_size, attention_location_n_filters, 
-                attention_location_kernel_size):
+    def __init__(self, n_mels, 
+                prenet_n_layers, prenet_embedding_size, 
+                encoder_embedding_size, 
+                decoder_n_layers, decoder_embedding_size, 
+                attention_embedding_size, attention_location_n_filters, attention_location_kernel_size, 
+                dropout_rate):
         super().__init__()
 
         self.n_mels = n_mels
         self.encoder_embedding_size = encoder_embedding_size
+        self.decoder_n_layers = decoder_n_layers
         self.decoder_embedding_size = decoder_embedding_size
 
-        self.prenet = Prenet(n_mels=n_mels, layers_sizes=[prenet_layer_size, prenet_layer_size])
-        self.rnn = nn.LSTMCell(prenet_layer_size + encoder_embedding_size, 
-                              decoder_embedding_size)
-        self.attention = LocalSensetiveAttention(attention_embedding_size, decoder_embedding_size, encoder_embedding_size, attention_location_kernel_size, attention_location_n_filters)
+        self.prenet = Prenet(n_mels, prenet_n_layers, prenet_embedding_size, dropout_rate)
+        self.attention = LocationSensetiveAttention(attention_embedding_size, 
+                                                    decoder_embedding_size, 
+                                                    encoder_embedding_size, 
+                                                    attention_location_kernel_size, 
+                                                    attention_location_n_filters)
+        self.rnn_layers = nn.ModuleList()
+
+        self.rnn_layers.append(
+            nn.LSTMCell(prenet_embedding_size + encoder_embedding_size, 
+                        decoder_embedding_size)
+        )
+        
+        for _ in range(decoder_n_layers - 1):
+            self.rnn_layers.append(
+                nn.LSTMCell(decoder_embedding_size, 
+                            decoder_embedding_size)
+            )                      
+
         self.proj = nn.Linear(decoder_embedding_size + encoder_embedding_size, 
                               n_mels)
 
@@ -194,23 +211,32 @@ class Decoder(nn.Module):
 
         frame = torch.zeros(batch_size, self.n_mels).to(model_device)
         attention_context = torch.zeros(batch_size, self.encoder_embedding_size).to(model_device)
-        rnn_state = torch.zeros(batch_size, self.decoder_embedding_size).to(model_device)
-        rnn_memory = torch.zeros(batch_size, self.decoder_embedding_size).to(model_device)
         alignment_state = torch.zeros(batch_size, max_time).to(model_device)
+
+        rnn_states = []
+
+        for i in range(self.decoder_n_layers):
+                rnn_states.append(
+                    (torch.zeros(batch_size, self.decoder_embedding_size).to(model_device),
+                     torch.zeros(batch_size, self.decoder_embedding_size).to(model_device))
+                )
         
-        return frame, attention_context, rnn_state, rnn_memory, alignment_state
+        return frame, attention_context, rnn_states, alignment_state
 
-    def forward(self, input_frame, encoder_mask, attention_context, rnn_state, rnn_memory, alignment_state, memory, processed_memory):
+    def forward(self, input_frame, encoder_mask, attention_context, rnn_states, alignment_state, memory, processed_memory):
         processed_frame = self.prenet(input_frame)
-        rnn_input = torch.cat((processed_frame, attention_context), 1)
+        rnn_hidden_state = torch.cat((processed_frame, attention_context), 1)
 
-        rnn_state, rnn_memory = self.rnn(rnn_input, (rnn_state, rnn_memory))
-        attention_context, alignment, alignment_state = self.attention(rnn_state, alignment_state, memory, processed_memory, encoder_mask)
+        for layer_indx, rnn_layer in enumerate(self.rnn_layers):
+            rnn_states[layer_indx] = rnn_layer(rnn_hidden_state, rnn_states[layer_indx])
+            rnn_hidden_state = rnn_states[layer_indx][0]
 
-        decoder_rnn_output = torch.cat((rnn_state, attention_context), 1)
+        attention_context, alignment, alignment_state = self.attention(rnn_hidden_state, alignment_state, memory, processed_memory, encoder_mask)
+
+        decoder_rnn_output = torch.cat((rnn_hidden_state, attention_context), 1)
         output_frame = self.proj(decoder_rnn_output)
 
         gate_output = self.gate_layer(decoder_rnn_output)
         gate_output = gate_output.squeeze(1)
 
-        return output_frame, gate_output, alignment, attention_context, rnn_state, rnn_memory, alignment_state
+        return output_frame, gate_output, alignment, attention_context, rnn_states, alignment_state

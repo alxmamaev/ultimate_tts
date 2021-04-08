@@ -8,31 +8,27 @@ feature_extractor_params:
   win_length: 1024
   hop_length: 256
   power: 1.0
-  trim_front_params: # Check torchaudio VAD doc
-    trigger_level: 7.0
-    trigger_time: 0.25
-  # trim_back_params: # Check torchaudio VAD doc
+  # trim_front_params: 
+  #   trigger_level: 7.0
+    # trigger_time: 0.25
+  # trim_back_params:
   #   trigger_level: 7.0
   #   trigger_time: 0.25
 
-#абвгдеёжзийклмнопрстуфхцчшщъыьэюя
-#abcdefghijklmnopqrstuvwxyz
 training_params:
   vocab: &vocab " .,!?-abcdefghijklmnopqrstuvwxyz"
   num_epochs: &num_epochs 3000
-  batch_size: &batch_size 5
-  num_workers: &num_workers 0
+  batch_size: &batch_size 128
+  num_workers: &num_workers 8
   
   loss_fn: &loss_fn Tacotron2Loss
-  optimizer_fn: &optimizer_fn Adam
-  lr: &lr 0.001
   grad_clip_value: &grad_clip_value 1.0
 
 data_params:
   train_metadata: "./data/train_metadata.csv"
   valid_metadata: "./data/valid_metadata.csv"
   mels_datapath: "./data/mels"
-  wavs_datapath: "./data/wavs" # Not using in tacotron training
+  wavs_datapath: "./data/wavs"
   collate_fn: text_mel_collate_fn
   tokenizer: 
     _target_: CharTokenizer
@@ -56,8 +52,9 @@ model:
   decoder_embedding_size: 1024
   attention_embedding_size: 512
   attention_location_n_filters: 32
-  attention_location_kernel_size: 31
+  attention_location_kernel_size: 15
   postnet_n_convolutions: 5
+  postnet_embedding_size: 512
   postnet_kernel_size: 5
   dropout_rate: 0.5
 
@@ -87,7 +84,7 @@ runner:
   loss_key: &model_loss "loss"
 
 engine:
-  _target_: DeviceEngine
+  _target_: DistributedDataParallelDevice
 
 loggers:
   console:
@@ -108,8 +105,10 @@ stages:
       _target_: *loss_fn
 
     optimizer:
-      _target_: *optimizer_fn
-      lr: *lr
+      _target_: Adam
+      lr: 1.0e-03
+      eps: 1.0e-06
+      weight_decay: 0.0
 
     callbacks:
       loss:

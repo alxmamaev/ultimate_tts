@@ -18,7 +18,8 @@ class Tacotron2(nn.Module):
                 attention_embedding_size=128, 
                 attention_location_n_filters=32, 
                 attention_location_kernel_size=31, 
-                postnet_n_convolutions=5, 
+                postnet_n_convolutions=5,
+                postnet_embedding_size=512,  
                 postnet_kernel_size=5, 
                 dropout_rate=0.5):
         super().__init__()
@@ -42,7 +43,7 @@ class Tacotron2(nn.Module):
                                dropout_rate)
 
         self.postnet = Postnet(n_mels, 
-                               decoder_embedding_size, 
+                               postnet_embedding_size, 
                                postnet_n_convolutions, 
                                postnet_kernel_size,
                                dropout_rate)
@@ -87,7 +88,7 @@ class Tacotron2(nn.Module):
         memory = self.encoder(texts)
         processed_memory = self.decoder.attention.memory_layer(memory)
 
-        frame, attention_context, rnn_state, rnn_memory, alignment_state = self.decoder.get_inital_states(memory)
+        frame, attention_context, rnn_states, alignment_state = self.decoder.get_inital_states(memory)
 
         decoder_outputs = []
         alignments = []
@@ -97,14 +98,13 @@ class Tacotron2(nn.Module):
 
 
         while (not gates.all()) and (current_step < max_decoder_steps):
-            frame, gate_output, alignment, attention_context, rnn_state, rnn_memory, alignment_state = self.decoder(frame, 
-                                                                                                                    encoder_mask,
-                                                                                                                    attention_context, 
-                                                                                                                    rnn_state, 
-                                                                                                                    rnn_memory, 
-                                                                                                                    alignment_state, 
-                                                                                                                    memory, 
-                                                                                                                    processed_memory)
+            frame, gate_output, alignment, attention_context, rnn_states, alignment_state = self.decoder(frame, 
+                                                                                                        encoder_mask,
+                                                                                                        attention_context, 
+                                                                                                        rnn_states,
+                                                                                                        alignment_state, 
+                                                                                                        memory, 
+                                                                                                        processed_memory)
             gates = (torch.sigmoid(gate_output) > gate_th) | gates
 
             alignments.append(alignment)

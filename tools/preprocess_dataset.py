@@ -80,9 +80,11 @@ def main(args):
             audio = vad_back(audio)
             audio = torch.flip(audio, [0])
 
-        if audio.shape[0] > audio_max_length or audio.shape[0] < audio_min_length:
-            continue
+        audio_length = audio.shape[0] / sample_rate
 
+        # Remove short and long audios
+        if audio_length > audio_max_length or audio_length < audio_min_length:
+            continue
 
         audio = audio / feature_extractor_params["wav_max_value"] # Normalize audio
         mel = mel_extractor(audio).transpose(0, 1).numpy()

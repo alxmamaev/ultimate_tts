@@ -1,7 +1,9 @@
 data/mels
+data/wavs
 data/*.csv
 .vscode/
 .ipynb_checkpoints/
 logs/
 .DS_Store
 **/__pycache__/
+downloads/

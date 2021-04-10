@@ -8,7 +8,8 @@ class Tacotron2(nn.Module):
                 vocab_size=26, 
                 n_mels=80, 
                 vocab_embedding_size=512, 
-                encoder_embedding_size=512, 
+                encoder_embedding_size=512,
+                encoder_n_rnn_layers=1, 
                 encoder_n_convolutions=3,
                 encoder_kernel_size=5, 
                 prenet_n_layers=2, 
@@ -26,6 +27,7 @@ class Tacotron2(nn.Module):
         self.encoder = Encoder(vocab_size + 1, # One extra token for paddinng
                                vocab_embedding_size, 
                                encoder_embedding_size, 
+                               encoder_n_rnn_layers,
                                encoder_n_convolutions, 
                                encoder_kernel_size, 
                                dropout_rate)

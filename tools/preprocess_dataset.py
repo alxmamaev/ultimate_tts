@@ -24,6 +24,9 @@ def main(args):
 
     feature_extractor_params = config["feature_extractor_params"]
 
+    audio_max_length = feature_extractor_params.get("audio_max_length")
+    audio_min_length = feature_extractor_params.get("audio_min_length")
+
     data_params = config["data_params"]
     mel_extractor = taudio.transforms.MelSpectrogram(sample_rate=feature_extractor_params["sample_rate"],
                                                      n_fft=feature_extractor_params["n_fft"],
@@ -50,12 +53,8 @@ def main(args):
     mels_datapath = Path(data_params["mels_datapath"])
     wavs_datapath = Path(data_params["wavs_datapath"]) if data_params.get("wavs_datapath", False) else None
 
-    with open(train_metadata_path, "w", encoding="utf-8") as f:
-        f.writelines(lines[args.valid_size:])
+    filtered_lines = []
 
-    with open(valid_metadata_path, "w", encoding="utf-8") as f:
-        f.writelines(lines[:args.valid_size])
-        
     for line in tqdm(lines):
         file_name, text = line.strip().split("|")[:2]
         input_wav_path = input_datapath.joinpath(file_name + ".wav")
@@ -81,13 +80,23 @@ def main(args):
             audio = vad_back(audio)
             audio = torch.flip(audio, [0])
 
+        if audio.shape[0] > audio_max_length or audio.shape[0] < audio_min_length:
+            continue
+
+
         audio = audio / feature_extractor_params["wav_max_value"] # Normalize audio
         mel = mel_extractor(audio).transpose(0, 1).numpy()
 
         np.save(str(mel_path), mel)
         if wav_path is not None:
             taudio.save(str(wav_path), audio.unsqueeze(0), sample_rate)
-        
+        filtered_lines.append(line)
+
+    with open(train_metadata_path, "w", encoding="utf-8") as f:
+        f.writelines(filtered_lines[args.valid_size:])
+
+    with open(valid_metadata_path, "w", encoding="utf-8") as f:
+        f.writelines(filtered_lines[:args.valid_size])
 
 if __name__ == "__main__":
     args = parse()

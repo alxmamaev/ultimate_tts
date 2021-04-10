@@ -108,7 +108,7 @@ class Prenet(nn.Module):
 
 class Encoder(nn.Module):
     def __init__(self, vocab_size, vocab_embedding_size, 
-                encoder_embedding_size, 
+                encoder_embedding_size, n_rnn_layers, 
                 n_convolutions, kernel_size, dropout_rate):
         assert encoder_embedding_size % 2 == 0, "encoder_embedding_size must be divisible by 2"
         
@@ -147,6 +147,7 @@ class Encoder(nn.Module):
         
         self.lstm = nn.LSTM(encoder_embedding_size, 
                             encoder_embedding_size // 2, 
+                            num_layers=n_rnn_layers,
                             bidirectional=True,
                             batch_first=True)
 

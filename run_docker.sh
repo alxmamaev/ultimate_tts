@@ -1,0 +1,1 @@
+docker-compose run ultimatetts conda run --no-capture-output -n ultimate_tts /bin/sh "/ultimate_tts/train.sh"

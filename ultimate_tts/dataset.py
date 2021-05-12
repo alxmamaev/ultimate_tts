@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset
-from .utils.audio import normalize_mel
+from .utils.functional import normalize_mel
 
 
 def text_mel_collate_fn(data):

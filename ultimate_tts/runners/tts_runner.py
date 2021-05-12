@@ -2,7 +2,7 @@ from collections import OrderedDict
 from functools import partial
 
 from ..dataset import TextMelDataset, text_mel_collate_fn
-from ..utils.text import TextPreprocesser
+# from ..utils.text.preprocessor import TextPreprocessor
 
 from catalyst import utils
 from catalyst.dl import IRunner, SupervisedConfigRunner

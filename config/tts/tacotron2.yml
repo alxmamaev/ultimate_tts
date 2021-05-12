@@ -1,23 +1,127 @@
-feature_extractor_params:
-  sample_rate: 22050
-  wav_max_value: 32768.0
-  n_fft: 1024
-  n_mels: &n_mels 80
-  f_min: 10
-  f_max: 8000
-  win_length: 1024
-  hop_length: 256
-  power: 1.0
+##############################################
+#              GLOBAL PARAMETERS              #
+##############################################
+sample_rate: &sample_rate 22050
+n_mels: &n_mels 80
+n_fft: &n_fft 1024
+hop_length: &hop_length 256
+win_length: &win_length 1024
 
-  audio_max_length: 8.0
-  audio_min_length: 1.0
-  trim_front_params: 
-    trigger_level: 7.0
-    trigger_time: 0.25
-  # trim_back_params:
-  #   trigger_level: 7.0
-  #   trigger_time: 0.25
 
+phonemes: &phonemes_vocab ["\t", "GH0", "DZH", "Pl", "DZl", "SH0l", "G0", "U0", "E", "U0l", "ZHl", "M0l", 
+                           "TS", "Ol", "ZH", "TS0l", "Y0", "K", "D0l", "F0", "SH", "GH", "S0l", "E0", 
+                           "Kl", "A0", "SHl", "G", "TSl", "A", "TSHl", "K0", "DZHl", "F0l", "Il", "B", 
+                           "TS0", "J0l", "U", "TSH0", "ZH0", "KH0", "D", "KHl", "GH0l", "DZ0l", "F", "V", 
+                           "Ll", "SH0", "I", "I0l", "M", "ZH0l", "Ml", "KH", "B0l", "Nl", "DZ", "TSH0l", 
+                           "DZ0", "O0", "V0l", "K0l", "E0l", "T", "J0", "Z", "L0l", "L", "P", "I0", "N0l", 
+                           "Fl", "V0", "Z0", "N", "Tl", "P0l", "DZH0", "El", "Bl", "S0", "KH0l", "Al", "L0", 
+                           "D0", "O", "G0l", "N0", "T0", "GHl", "O0l", "R0", "R0l", "Dl", "Sl", "T0l", "P0", 
+                           "Y", "Ul", "Yl", "TSH", "B0", "Gl", "Z0l", "Vl", "M0", "Zl", "Rl", "A0l", "Y0l", "R", 
+                           "DZH0l", "S"]
+
+graphemes: &graphemes_vocab [" ", ",", ",", ".", "!", "-", ":",
+                            "а", "б", "в", "г", "д", "е", "ж", "з", 
+                            "и", "й", "к", "л", "м", "н", "о", "п", 
+                            "р", "с", "т", "у", "ф", "х", "ц", "ч", 
+                            "ш", "щ", "ъ", "ы", "ь", "э", "ю", "я"]
+
+
+
+##############################################
+#      DATA PREPROCESSING  PARAMETERS        #
+##############################################
+dataset_preprocessing_params:
+  verbose: true
+  processors:
+    text_processor:
+      inputs:
+        metadata_path: "./downloads/nikolaev_metadata.csv"
+      outputs:
+        metadata_path: "./data/metadata.csv"
+        vocab_path: "./data/vocab.txt"
+      
+    audio_processor:
+      inputs:
+        metadata_path: "./data/metadata.csv"
+        wavs_path: "./downloads/nikolaev"
+      outputs:
+        metadata_path: "./data/metadata.csv"
+        wavs_path: "./data/wavs"
+
+    # alnment_processor:
+    #   inputs:
+    #     metadata_path: "./downloads/metadata.csv"
+    #     wavs_path: "./data/wavs"
+    #     vocab_path: "./data/vocab.txt"
+    #   outputs:
+    #     textgrids_path: "./data/textgrids"
+    #     durations_path: "./data/durations"
+
+    feature_processor:
+      inputs:
+        metadata_path: "./data/metadata.csv"
+        wavs_path: "./data/wavs"
+        # durations_path: "./data/durations"
+      outputs:
+        mels_path: "./data/mels"
+        speakers_embeddings_path: "./data/speakers_embeddings"
+        prosodies_path: "./data/prosodies/"
+
+
+text_processor:
+  _target_: TextProcessor
+  batch_size: 64
+  vocab: *phonemes_vocab
+  cleaners:
+    - _target_: RussianTextNormalizer
+    - _target_: LowerCaseCleaner
+    - _target_: VocabCleaner
+      vocab: *graphemes_vocab
+  g2p:
+    _target_: RussianG2P
+
+
+audio_processor:
+  _target_: AudioProcessor
+  sample_rate: *sample_rate
+  batch_size: 1
+  transforms:
+    - _target_: AudioTrimmer
+      sample_rate: *sample_rate
+      trim_front_params: 
+        trigger_level: 7.0
+        trigger_time: 0.25
+      # trim_back_params:
+      #   trigger_level: 7.0
+      #   trigger_time: 0.25
+    # - _target_: AudioPadForMel
+    #   hop_length: *hop_length
+    #   win_length: *win_length
+
+
+# forced_alignenment_processor:
+#   phoneme_durations_dir: "./data/phoneme_durations"
+#   words_durations_dir: "./data/words_durations"
+
+
+feature_processor:
+  _target_: FeaturesProcessor
+  batch_size: 5
+  wav_max_value: 32768
+  mel_extractor:
+    _target_: MelExtractor
+    sample_rate: *sample_rate
+    n_fft: *n_fft
+    n_mels: *n_mels
+    f_min: 10
+    f_max: 8000
+    win_length: *win_length
+    hop_length: *hop_length
+    power: 1.0
+
+##############################################
+#           TRAINING PARAMETERS              #
+##############################################
 
 training_params:
   vocab: &vocab " .,!?-абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
@@ -27,6 +131,10 @@ training_params:
   
   loss_fn: &loss_fn Tacotron2Loss
   grad_clip_value: &grad_clip_value 1.0
+
+inference_params:
+  output_key: ["mels", "alignments", "durations"]
+  mel_key: "mels"
 
 data_params:
   train_metadata: "./data/train_metadata.csv"
@@ -41,6 +149,12 @@ data_params:
     - _target_: LowerCaseCleaner
     - _target_: VocabCleaner
       vocab: *vocab
+
+
+
+##############################################
+#             MODEL PARAMETERS               #
+##############################################
 
 model:
   _target_: Tacotron2
@@ -63,9 +177,11 @@ model:
   postnet_kernel_size: 5
   dropout_rate: 0.5
 
-inference:
-  output_key: ["mels", "alignments", "durations"]
-  mel_key: "mels"
+
+
+##############################################
+#             RUNNER PARAMETERS              #
+##############################################
 
 args:
   expdir: "ultimate_tts"
@@ -98,6 +214,13 @@ loggers:
     _target_: TensorboardLogger
     logdir: *logdir
 
+
+
+
+##############################################
+#                  STAGES                    #
+##############################################
+
 stages:
   train:
     num_epochs: *num_epochs
@@ -127,7 +250,7 @@ stages:
         grad_clip_fn: clip_grad_value_
         grad_clip_params:
           clip_value: *grad_clip_value
-      alignments:
+      output_logger:
         _target_: TTSOutputsLogger
         outputs_keys: ["decoder_outputs", "postnet_outputs", "alignments"]
       saver:

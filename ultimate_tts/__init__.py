@@ -2,10 +2,10 @@ from .tts import models
 from .tts.layers import losses
 from . import callbacks
 from . import runners
-from .utils import text, audio, features
+from .utils import text, audio, features, forced_aligner
 from .dataset import text_mel_collate_fn
-
 from catalyst.registry import REGISTRY
+
 
 # -- Register text preprocessing functions --
 REGISTRY.add_from_module(text.processor)
@@ -23,7 +23,11 @@ REGISTRY.add_from_module(features.mel)
 REGISTRY.add_from_module(features.xvectors)
 REGISTRY.add_from_module(features.prosody)
 
+# -- Register forced alignment extraction functions --
+REGISTRY.add_from_module(forced_aligner.processor)
+
 # -- Register data functions --
+REGISTRY.add(text_mel_collate_fn)
 
 # -- Register TTS training utils --
 REGISTRY.add_from_module(runners)

@@ -55,7 +55,7 @@ class FeaturesProcessor:
         output_prossodies_datapath = Path(outputs["prosodies_path"]) if outputs.get("prosodies_path", False) else None
 
         for i in [output_mels_datapath, output_speakers_embeddings_path, output_prossodies_datapath]:
-            i.parent.mkdir(parents=True, exist_ok=True)
+            i.mkdir(parents=True, exist_ok=True)
 
 
         with open(input_metadata_path) as f:

@@ -32,15 +32,14 @@ class TTSRunner(SupervisedConfigRunner):
         datasets = OrderedDict()
         data_params = self._config["data_params"]
         
-        text_preprocessor = self.get_text_preprocessor()
-        datasets["train"] = TextMelDataset(text_preprocessor, 
-                                           data_params["train_metadata"],
+        datasets["train"] = TextMelDataset(data_params["train_metadata"],
                                            data_params["mels_datapath"],
+                                           data_params["vocab"],
                                            durations_datapath=data_params.get("durations_datapath"))
 
-        datasets["valid"] = TextMelDataset(text_preprocessor,
-                                           data_params["valid_metadata"],
+        datasets["valid"] = TextMelDataset(data_params["valid_metadata"],
                                            data_params["mels_datapath"],
+                                           data_params["vocab"],
                                            durations_datapath=data_params.get("durations_datapath"))
 
         return datasets

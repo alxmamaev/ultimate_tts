@@ -32,6 +32,6 @@ class MelExtractor:
         padded_mels = self.mel_extract(padded_audios)
         padded_mels = normalize_mel(padded_mels).cpu()
 
-        mels = [padded_mels[i,:,:mels_lenghts[i]] for i in range(padded_mels.shape[0])]
+        mels = [padded_mels[i,:,:mels_lenghts[i]].transpose(0, 1) for i in range(padded_mels.shape[0])]
 
         return mels

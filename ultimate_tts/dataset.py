@@ -19,6 +19,7 @@ def text_mel_collate_fn(data):
     if data[0].get("mel") is not None:
         mels = [item["mel"] for item in data]
         mel_lenghts = [i.shape[0] for i in mels]
+        
         batch["mels_target"] = pad_sequence(mels, batch_first=True)
         batch["gates_target"] = torch.zeros(batch["mels_target"].shape[0], batch["mels_target"].shape[1])
         batch["decoder_mask"] = torch.zeros_like(batch["mels_target"]).bool()
@@ -36,7 +37,7 @@ def text_mel_collate_fn(data):
 
 
 class TextMelDataset(Dataset):
-    def __init__(self, text_preprocessor, metadata_path, mels_datapath, durations_datapath=None):
+    def __init__(self, metadata_path, mels_datapath, vocab, durations_datapath=None):
         self.metadata = []
 
         with open(metadata_path, "r", encoding="utf-8") as f:
@@ -47,17 +48,18 @@ class TextMelDataset(Dataset):
         self.mels_datapath = mels_datapath
         self.durations_datapath = durations_datapath
 
-        self.text_preprocessor = text_preprocessor
+        self.token2id = {}
+        for i, token in enumerate(vocab, 1):
+            self.token2id[token] = i
 
     def __getitem__(self, index):
         filename, text = self.metadata[index]
 
         mel = np.load(f"{self.mels_datapath}/{filename}.npy")
-        tokens = self.text_preprocessor(text)
+        tokens = [self.token2id[token] for token in text.split()]
 
         tokens = torch.tensor(tokens, dtype=torch.long)
         mel = torch.tensor(mel)
-        mel = normalize_mel(mel)
 
         if self.durations_datapath is not None:
             durations = np.load(f"{self.durations_datapath}/{filename}.npy")

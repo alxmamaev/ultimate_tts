@@ -34,8 +34,8 @@ class AudioProcessor:
         output_wavs_path = Path(outputs["wavs_path"])
         output_metadata_path = Path(outputs["metadata_path"])
 
-        for i in [output_wavs_path, output_metadata_path]:
-            i.parent.mkdir(parents=True, exist_ok=True)
+        output_wavs_path.mkdir(parents=True, exist_ok=True)
+        output_metadata_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(input_metadata_path) as f:
             for line in f:

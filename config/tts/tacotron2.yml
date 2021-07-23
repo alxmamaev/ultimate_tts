@@ -33,40 +33,40 @@ graphemes: &graphemes_vocab [" ", ",", ",", ".", "!", "-", ":",
 dataset_preprocessing_params:
   verbose: true
   processors:
-    # text_processor:
-    #   inputs:
-    #     metadata_path: "./downloads/nikolaev_metadata.csv"
-    #   outputs:
-    #     metadata_path: "./data/metadata.csv"
-    #     vocab_path: "./data/vocab.txt"
+    text_processor:
+      inputs:
+        metadata_path: "./downloads/nikolaev_metadata.csv"
+      outputs:
+        metadata_path: "./data/metadata.csv"
+        vocab_path: "./data/vocab.txt"
       
-    # audio_processor:
+    audio_processor:
+      inputs:
+        metadata_path: "./data/metadata.csv"
+        wavs_path: "./downloads/nikolaev"
+      outputs:
+        metadata_path: "./data/metadata.csv"
+        wavs_path: "./data/wavs"
+
+    # forced_alignenment_processor:
     #   inputs:
-    #     metadata_path: "./data/metadata.csv"
-    #     wavs_path: "./downloads/nikolaev"
-    #   outputs:
     #     metadata_path: "./data/metadata.csv"
     #     wavs_path: "./data/wavs"
+    #     vocab_path: "./data/vocab.txt"
+    #   outputs:
+    #     "corpus_path": "./data/wavs"
+    #     textgrids_path: "./data/textgrids"
+    #     durations_path: "./data/durations"
 
-    forced_alignenment_processor:
+    feature_processor:
       inputs:
         metadata_path: "./data/metadata.csv"
         wavs_path: "./data/wavs"
-        vocab_path: "./data/vocab.txt"
+        # durations_path: "./data/durations"
       outputs:
-        "corpus_path": "./data/wavs"
-        textgrids_path: "./data/textgrids"
-        durations_path: "./data/durations"
-
-    # feature_processor:
-    #   inputs:
-    #     metadata_path: "./data/metadata.csv"
-    #     wavs_path: "./data/wavs"
-    #     # durations_path: "./data/durations"
-    #   outputs:
-    #     mels_path: &mel_path "./data/mels"
-    #     speakers_embeddings_path: "./data/speakers_embeddings"
-    #     prosodies_path: "./data/prosodies/"
+        mels_path: &mel_path "./data/mels"
+        speakers_embeddings_path: "./data/speakers_embeddings"
+        prosodies_path: "./data/prosodies/"
 
 
 text_processor:
@@ -121,8 +121,8 @@ feature_processor:
 ##############################################
 
 training_params:
-  num_epochs: &num_epochs 3000
-  batch_size: &batch_size 5
+  num_epochs: &num_epochs 2
+  batch_size: &batch_size 1
   num_workers: &num_workers 0
   
   loss_fn: &loss_fn Tacotron2Loss
@@ -136,7 +136,7 @@ data_params:
   train_metadata: "./data/train_metadata.csv"
   valid_metadata: "./data/valid_metadata.csv"
   mels_datapath: "./data/mels"
-  collate_fn: text_mel_collate_fn
+  collate_fn: &collate_fn text_mel_collate_fn
   vocab: *graphemes_vocab
 
 
@@ -215,8 +215,12 @@ stages:
     num_epochs: *num_epochs
 
     loaders:
-      batch_size: *batch_size
-      num_workers: *num_workers
+      train:
+        batch_size: *batch_size
+        num_workers: *num_workers
+      valid:
+        batch_size: *batch_size
+        num_workers: *num_workers
 
     criterion:
       _target_: *loss_fn

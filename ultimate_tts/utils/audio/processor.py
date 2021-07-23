@@ -57,7 +57,7 @@ class AudioProcessor:
                 filename, _ = input_metadata[item_index]
 
                 input_wav_path = input_wavs_path.joinpath(filename + ".wav")
-                audio, _ = taudio.load_wav(str(input_wav_path))
+                audio, _ = taudio.load(str(input_wav_path))
 
                 assert audio.shape[0] == 1, "audio must be monophonic"
                 audio = audio[0]

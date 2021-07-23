@@ -80,7 +80,7 @@ class FeaturesProcessor:
                 input_wav_path = input_wavs_path.joinpath(filename + ".wav")
                 durations_path = input_durations_path.joinpath(filename + ".npy") if input_durations_path is not None else None
 
-                audio, _ = taudio.load_wav(str(input_wav_path))
+                audio, _ = taudio.load(str(input_wav_path))
 
                 assert audio.shape[0] == 1, "audio must be monophonic"
                 audio = audio[0] 

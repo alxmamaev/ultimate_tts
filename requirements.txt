@@ -1,4 +1,4 @@
-catalyst==21.03.2
+catalyst==21.06
 tqdm==4.50.2
 matplotlib==3.3.2
 lxml==4.6.3
@@ -7,3 +7,4 @@ rnnmorph==0.4.0
 git+git://github.com/nsu-ai/russian_g2p@2030552
 keras >= 2.1.4,<2.4.0
 tensorflow==1.15
+h5py==2.10.0

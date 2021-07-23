@@ -46,16 +46,14 @@ class TTSRunner(SupervisedConfigRunner):
 
 
     def get_loaders(self, stage: str):
-        loader_params = dict(self._stage_config[stage]["loaders"])
-        loader_params["collate_fn"] = self.get_collate_fn()
-
-        loaders_params = {"valid": copy(loader_params), 
-                          "train": copy(loader_params)}
+        loaders_params = dict(self._stage_config[stage]["loaders"])
+        
+        loaders_params["train"]["collate_fn"] = self.get_collate_fn()
+        loaders_params["valid"]["collate_fn"] = self.get_collate_fn()
 
         loaders = get_loaders_from_params(
-            datasets_fn=partial(self.get_datasets, stage=stage),
+            datasets=self.get_datasets(stage),
             initial_seed=self.seed,
-            stage=stage,
             loaders_params=loaders_params,
         )
         return loaders

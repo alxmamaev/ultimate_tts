@@ -23,9 +23,6 @@ class AudioTrimmer:
         processed_batch = []
 
         for audio in audio_batch:
-            if torch.cuda.is_available():
-                audio = audio.cuda()
-
             if self.vad_front is not None:
                 audio = self.vad_front(audio)
 

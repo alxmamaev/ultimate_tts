@@ -1,7 +1,7 @@
 FROM pytorch/pytorch
 LABEL Name=ultimatetts Version=0.0.1
 
-RUN apt-get -y update && apt install git libsndfile-dev libopenblas-dev -y
+RUN apt-get -y update && apt install git libsndfile-dev libopenblas-dev sox -y
 COPY requirements.txt .
 
 # Install Montreal Forced Aligner

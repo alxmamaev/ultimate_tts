@@ -7,6 +7,19 @@ from math import ceil
 
 class AudioProcessor:
     def __init__(self, sample_rate, transforms, batch_size=1):
+        """AudioProcessor handles audios processing.
+        This processor applies transforms in their order to the batch of audios.
+
+        Parameters
+        ----------
+        sample_rate : int
+            Which sample rate, will used to resample inputs audios.
+        transforms : Union[List[Callable], List[Dict]]
+            List of callable transforms objects, or their config dicts.
+        batch_size : int, optional
+            Batch size for data processing, by default 1
+        """
+
         self.sample_rate = sample_rate
         self.transforms = []
         self.batch_size = batch_size
@@ -19,6 +32,19 @@ class AudioProcessor:
 
 
     def __call__(self, audios_batch):
+        """Function applies transforms to all input audios in the batch, and returns
+           list of processed audios
+
+        Parameters
+        ----------
+        audios_batch : List[torch.FloatTensor]
+            Input batch of audios strings
+
+        Returns
+        -------
+        List[torch.FloatTensor]
+            Batch with processed audios
+        """
         for transform in self.transforms:
             audios_batch = transform(audios_batch)
 
@@ -27,7 +53,6 @@ class AudioProcessor:
 
     def process_files(self, inputs, outputs, verbose=False):
         input_metadata = []
-        filtered_files = set()
 
         input_metadata_path = Path(inputs["metadata_path"])
         input_wavs_path = Path(inputs["wavs_path"])
@@ -76,7 +101,6 @@ class AudioProcessor:
 
                 output_wav_path = output_wavs_path.joinpath(filename + ".wav")
                 taudio.save(str(output_wav_path), audio.unsqueeze(0), self.sample_rate)
-                filtered_files.add(filename)
 
             if verbose:
                 progress_bar.update(1)
@@ -84,5 +108,4 @@ class AudioProcessor:
 
         with open(output_metadata_path, "w") as f:
             for filename, text in input_metadata:
-                if filename in filtered_files:
-                    f.write(f"{filename}|{text}\n")
+                f.write(f"{filename}|{text}\n")

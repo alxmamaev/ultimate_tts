@@ -1,15 +1,12 @@
-import re
 from russian_g2p.Transcription import Transcription
-
-WORD_PATTEN = re.compile("([\w]+)")
 
 # FIX IT
 import warnings
 warnings.filterwarnings("ignore")
 
 
-# In future i will replace it to more efficient and better g2p
-# But now thats implementation not working in batch mode and has a bad accuracy
+# In the future I will replace this module to more efficient and better g2p
+# But now thats implementation not working in a batch mode and has got a bad accuracy
 
 class RussianG2P:
     def __init__(self, word_separator="\t"):
@@ -17,9 +14,9 @@ class RussianG2P:
         self.word_separator = word_separator
 
 
-    def __call__(self, graphemes_batch, return_vocab=False):
+    def __call__(self, graphemes_batch, return_word_to_phonemes_dictionary=False):
         processed_batch = []
-        vocab = {}
+        word_to_phonemes_dictionary = {}
 
         for graphemes in graphemes_batch:
             words = []
@@ -34,18 +31,24 @@ class RussianG2P:
                 else:
                     word += grapheme
             
-            words_phonemes = self.transcriptor.transcribe(words)
-            for word, word_phonemes in zip(words, words_phonemes):
+            g2p_output = self.transcriptor.transcribe(words)
+            for word, word_phonemes in zip(words, g2p_output):
+                
+                if not word_phonemes:
+                    continue
+
+                # Some words have different variant to pronounce,
+                # We are selecting one of them
                 word_phonemes = word_phonemes[0]
                 phonemes += word_phonemes + [self.word_separator]
                 
-                if return_vocab:
-                    vocab[word] = word_phonemes
+                if return_word_to_phonemes_dictionary:
+                    word_to_phonemes_dictionary[word] = word_phonemes
             
             processed_batch.append(phonemes)
 
-        if return_vocab:
-            return processed_batch, vocab 
+        if return_word_to_phonemes_dictionary:
+            return processed_batch, word_to_phonemes_dictionary 
         
         return processed_batch
 

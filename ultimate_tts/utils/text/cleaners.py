@@ -1,8 +1,23 @@
 class LowerCaseCleaner:
+    """Callable cleaner thats lowercase input texts
+    """
     def __init__(self):
-        pass
+        return
+
 
     def __call__(self, texts_batch):
+        """Lowercase batch all texts in batch
+
+        Parameters
+        ----------
+        texts_batch : List[str]
+            Input batch of texts
+
+        Returns
+        -------
+        List[str]
+            Returns batch of lowercased texts
+        """
         processed_batch = []
 
         for text in texts_batch:
@@ -13,10 +28,32 @@ class LowerCaseCleaner:
 
 
 class VocabCleaner:
+    """Callable cleaner thats remove all charracters from texts, thats are not contains in vocab
+    """
     def __init__(self, vocab):
+        """Initialization function
+
+        Parameters
+        ----------
+        vocab : List[str]
+            List of allowed charracters
+        """
         self.vocab = list(vocab)
 
+
     def __call__(self, texts_batch):
+        """Removed charracters thats not contained in vocab
+
+        Parameters
+        ----------
+        texts_batch : List[str]
+            Input batch of texts
+
+        Returns
+        -------
+        List[str]
+            Returns batch of texts thats not contains not allowed characters
+        """
         processed_batch = []
 
         for text in texts_batch:

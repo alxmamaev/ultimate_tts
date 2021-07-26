@@ -5,6 +5,8 @@ from ..functional import normalize_mel
 
 
 class MelExtractor:
+    """Mel Extractor generate mel spectrograms for given audios
+    """
     def __init__(self, sample_rate, n_fft, n_mels, win_length, hop_length, f_min, f_max, power):
         self.mel_extract = taudio.transforms.MelSpectrogram(sample_rate=sample_rate,
                                                             n_fft=n_fft,

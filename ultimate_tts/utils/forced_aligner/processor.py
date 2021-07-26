@@ -1,11 +1,18 @@
 import subprocess
-import subprocess
 from pathlib import Path
+import os
 
 
 class MontrealForcedAlignerProcessor:
+    """Processor wraps Montreal Forced Aligner, for align text with audio.
+    That's processor do few steps:
+    * reads metadata and creates corpus for MFA, that is directory that contains audio in wav format
+    and text trascription in .lab format.
+    * gets path to dictionary file, thats contains transcription for every word in the text
+    * runs MFA training and aligning subprocess
+    """
     def __init__(self):
-        pass
+        return
 
     def process_files(self, inputs, outputs, verbose=False):
         vocab_path = inputs["vocab_path"]
@@ -21,4 +28,8 @@ class MontrealForcedAlignerProcessor:
                 with open(str(output_lab_path), "w") as f:
                     f.write(text)
 
-        subprocess.call(["mfa", "train", str(output_corpus_path), str(vocab_path), str(output_textgrids)])
+        if verbose:
+            print("Starting forced aligner")
+
+        ncpu = os.cpu_count()
+        subprocess.call(["mfa", "train", str(output_corpus_path), str(vocab_path), str(output_textgrids), "-j", str(ncpu), "-c"])

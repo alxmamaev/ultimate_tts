@@ -2,31 +2,34 @@ from .tts import models
 from .tts.layers import losses
 from . import callbacks
 from . import runners
-from .utils import text, audio, features, forced_aligner
+from .utils import text, audio, features, forced_aligner, durations_extractor
 from .dataset import text_mel_collate_fn
 from catalyst.registry import REGISTRY
 
 
-# -- Register text preprocessing functions --
+# -- Register text processing modules --
 REGISTRY.add_from_module(text.processor)
 REGISTRY.add_from_module(text.cleaners)
 REGISTRY.add_from_module(text.g2p)
 REGISTRY.add_from_module(text.normalizers)
 
-# -- Register audio preprocessing functions --
+# -- Register audio processing modules --
 REGISTRY.add_from_module(audio.processor)
 REGISTRY.add_from_module(audio.transforms)
 
-# -- Register feature extraction functions --
+# -- Register feature extraction modules --
 REGISTRY.add_from_module(features.processor)
 REGISTRY.add_from_module(features.mel)
 REGISTRY.add_from_module(features.xvectors)
 REGISTRY.add_from_module(features.prosody)
 
-# -- Register forced alignment extraction functions --
+# -- Register forced alignment extraction module --
 REGISTRY.add_from_module(forced_aligner.processor)
 
-# -- Register data functions --
+# -- Register durations extraction module --
+REGISTRY.add_from_module(durations_extractor.processor)
+
+# -- Register data modules --
 REGISTRY.add(text_mel_collate_fn)
 
 # -- Register TTS training utils --

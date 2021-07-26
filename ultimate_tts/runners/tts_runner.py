@@ -18,15 +18,15 @@ class TTSRunner(SupervisedConfigRunner):
 
         return collate_fn
 
-    def get_text_preprocessor(self):
-        data_params = self._config["data_params"]
+    # def get_text_preprocessor(self):
+    #     data_params = self._config["data_params"]
 
-        tokenizer = REGISTRY.get_from_params(**data_params["tokenizer"])
-        cleaners = [REGISTRY.get_from_params(**cleaner_factory_params) for cleaner_factory_params in data_params["cleaners"]]
+    #     tokenizer = REGISTRY.get_from_params(**data_params["tokenizer"])
+    #     cleaners = [REGISTRY.get_from_params(**cleaner_factory_params) for cleaner_factory_params in data_params["cleaners"]]
 
-        text_preprocessor = TextPreprocesser(tokenizer, cleaners=cleaners)
+    #     text_preprocessor = TextPreprocesser(tokenizer, cleaners=cleaners)
 
-        return text_preprocessor
+    #     return text_preprocessor
 
     def get_datasets(self, stage: str):
         datasets = OrderedDict()

@@ -1,8 +1,8 @@
 version: '3.4'
 
 services:
-  ultimatetts:
-    image: ultimatetts
+  ultimate_tts:
+    image: ultimate_tts
     stdin_open: true
     tty: true
     volumes:
@@ -10,7 +10,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-    command: conda run --no-capture-output -n ultimate_tts /bin/sh "/ultimate_tts/train.sh"
+    # command: conda run --no-capture-output -n ultimate_tts /bin/sh "/ultimate_tts/train.sh"
 
   
 volumes:

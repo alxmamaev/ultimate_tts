@@ -1,3 +1,5 @@
+sample_rate: &sample_rate 22050
+
 ##############################################
 #        INITIALIZE DATA PROCESSORS          #
 ##############################################
@@ -45,7 +47,6 @@ text_processor:
 
 audio_processor:
   _target_: AudioProcessor
-  sample_rate: &sample_rate 22050
   batch_size: 1
   transforms:
     - _target_: AudioTrimmer
@@ -101,7 +102,7 @@ dataset_preprocessing_params:
         metadata_path: "./downloads/metadata.csv"
       outputs:
         metadata_path: "./data/metadata.csv"
-        vocab_path: "./data/vocab.txt"
+        word_to_phonemes_dictionary_path: "./data/dictionary.txt"
       
     audio_processor:
       inputs:
@@ -115,25 +116,24 @@ dataset_preprocessing_params:
       inputs:
         metadata_path: "./data/metadata.csv"
         wavs_path: "./data/wavs"
-        vocab_path: "./data/vocab.txt"
+        word_to_phonemes_dictionary_path: "./data/dictionary.txt"
       outputs:
         corpus_path: "./data/wavs"
         textgrids_path: "./data/textgrids"
 
-    # duration_processor:
-    #   inputs:
-    #     metadata_path: "./data/metadata.csv"
-    #     textgrids_path: "./data/textgrids"
-    #     hop_length: *hop_length
-    #   outputs:
-    #     metadata_path: "./data/metadata.csv"
-    #     durations_path: "./data/durations"
+    duration_processor:
+      inputs:
+        metadata_path: "./data/metadata.csv"
+        textgrids_path: "./data/textgrids"
+        hop_length: *hop_length
+      outputs:
+        metadata_path: "./data/metadata.csv"
+        durations_path: "./data/durations"
 
     feature_processor:
       inputs:
         metadata_path: "./data/metadata.csv"
         wavs_path: "./data/wavs"
-        # durations_path: "./data/durations"
       outputs:
         mels_path: &mel_path "./data/mels"
         speakers_embeddings_path: "./data/speakers_embeddings"

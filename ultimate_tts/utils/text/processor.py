@@ -169,7 +169,11 @@ class TextProcessor:
 
         input_metadata_path = Path(inputs["metadata_path"])
         output_metadata_path = Path(outputs["metadata_path"])
-        output_word_to_phonemes_dictionary_path = Path(outputs["word2phone_dictionary_path"]) if outputs.get("word2phone_dictionary_path", False) else None
+
+        if outputs.get("word_to_phonemes_dictionary_path") is not None:
+            output_word_to_phonemes_dictionary_path = Path(outputs["word_to_phonemes_dictionary_path"])  
+        else:
+            output_word_to_phonemes_dictionary_path = None
 
         for i in [output_metadata_path, output_word_to_phonemes_dictionary_path]:
             if i is not None:

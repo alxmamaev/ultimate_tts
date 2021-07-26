@@ -15,7 +15,7 @@ class MontrealForcedAlignerProcessor:
         return
 
     def process_files(self, inputs, outputs, verbose=False):
-        vocab_path = inputs["vocab_path"]
+        vocab_path = inputs["word_to_phonemes_dictionary_path"]
         output_corpus_path = Path(outputs["corpus_path"])
         output_textgrids = Path(outputs["textgrids_path"])
 

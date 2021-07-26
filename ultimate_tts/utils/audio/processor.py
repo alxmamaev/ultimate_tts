@@ -57,7 +57,7 @@ class AudioProcessor:
 
             assert sample_rate <= _sample_rate, f"Error at file {input_wav_path}, sample rate of input audio less than target sample_rate"
 
-            audio = taudio.functional.resample(audio, _sample_rate, sample_rate)
+            audio = taudio.transforms.Resample(_sample_rate, sample_rate)(audio)
 
             assert audio.shape[0] == 1, f"Error at file {input_wav_path}, audio must be monophonic"
             assert audio.shape[1] > 0, f"Error at file {input_wav_path}, audio length is zero"

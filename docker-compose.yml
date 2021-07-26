@@ -3,6 +3,7 @@ version: '3.4'
 services:
   ultimate_tts:
     image: ultimate_tts
+    runtime: nvidia
     stdin_open: true
     tty: true
     volumes:

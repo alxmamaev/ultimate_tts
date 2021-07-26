@@ -96,12 +96,12 @@ feature_processor:
 dataset_preprocessing_params:
   verbose: true
   processors:
-    text_processor:
-      inputs:
-        metadata_path: "./downloads/metadata.csv"
-      outputs:
-        metadata_path: "./data/metadata.csv"
-        vocab_path: "./data/vocab.txt"
+          #    text_processor:
+          #  inputs:
+          #metadata_path: "./downloads/metadata.csv"
+          # outputs:
+          # metadata_path: "./data/metadata.csv"
+          #vocab_path: "./data/vocab.txt"
       
     audio_processor:
       inputs:

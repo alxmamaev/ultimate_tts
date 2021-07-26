@@ -3,11 +3,17 @@ version: '3.4'
 services:
   ultimate_tts:
     image: ultimate_tts
-    runtime: nvidia
     stdin_open: true
     tty: true
     volumes:
       - .:/ultimate_tts
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]  
     build:
       context: .
       dockerfile: ./Dockerfile

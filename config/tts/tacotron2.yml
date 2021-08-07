@@ -1,55 +1,53 @@
-sample_rate: &sample_rate 22050
+sample_rate: &sample_rate 16000
 
-##############################################
-#        INITIALIZE DATA PROCESSORS          #
-##############################################
-#   Data processors handle data processing   #
-#   for training and model inference.        #
-#   This section initialize all processors.  #
-#   Name of every processor settuping as     #
-#   a name of key of                         #
-#   an processor init section.               #
-#   You can use this name at                 #
-#   "DATA PROCESSING" section.               #
-#   The _target_ value point to what the     #
-#   class realize this processor.            #
-#   After all we are settup some params thats#
-#   will pass into consturctor of            #
-#   the processir class                      #
-##############################################
+##################################################################
+#                  INITIALIZE DATA PROCESSORS                    #
+##################################################################
+#   Data processors handle data processing for training          # 
+#   and model inference. This section initialize all processors. #
+#   Name of every processor settuping as a name of key of an     #
+#   processor init section. You can use this name at             #
+#   "DATA PROCESSING" section.                                   #
+#   The _target_ value point to what the class realize this      #
+#   processor. After all we are settup some params thats will    #
+#   pass into consturctor of the processor class.                #
+##################################################################
+
+# ["\t", "GH0", "DZH", "Pl", "DZl", "SH0l", "G0", "U0", "E", "U0l", "ZHl", "M0l", 
+#                  "TS", "Ol", "ZH", "TS0l", "Y0", "K", "D0l", "F0", "SH", "GH", "S0l", "E0", 
+#                  "Kl", "A0", "SHl", "G", "TSl", "A", "TSHl", "K0", "DZHl", "F0l", "Il", "B", 
+#                  "TS0", "J0l", "U", "TSH0", "ZH0", "KH0", "D", "KHl", "GH0l", "DZ0l", "F", "V", 
+#                  "Ll", "SH0", "I", "I0l", "M", "ZH0l", "Ml", "KH", "B0l", "Nl", "DZ", "TSH0l", 
+#                  "DZ0", "O0", "V0l", "K0l", "E0l", "T", "J0", "Z", "L0l", "L", "P", "I0", "N0l", 
+#                  "Fl", "V0", "Z0", "N", "Tl", "P0l", "DZH0", "El", "Bl", "S0", "KH0l", "Al", "L0", 
+#                  "D0", "O", "G0l", "N0", "T0", "GHl", "O0l", "R0", "R0l", "Dl", "Sl", "T0l", "P0", 
+#                  "Y", "Ul", "Yl", "TSH", "B0", "Gl", "Z0l", "Vl", "M0", "Zl", "Rl", "A0l", "Y0l", "R", 
+#                  "DZH0l", "S"]
+
+reader_processor:
+  _target_: processors.reader.LJSpeechReaderProcessor
 
 
 text_processor:
-  _target_: TextProcessor
+  _target_: processors.text.TextProcessor
   batch_size: 32
-  vocab: &vocab ["\t", "GH0", "DZH", "Pl", "DZl", "SH0l", "G0", "U0", "E", "U0l", "ZHl", "M0l", 
-                 "TS", "Ol", "ZH", "TS0l", "Y0", "K", "D0l", "F0", "SH", "GH", "S0l", "E0", 
-                 "Kl", "A0", "SHl", "G", "TSl", "A", "TSHl", "K0", "DZHl", "F0l", "Il", "B", 
-                 "TS0", "J0l", "U", "TSH0", "ZH0", "KH0", "D", "KHl", "GH0l", "DZ0l", "F", "V", 
-                 "Ll", "SH0", "I", "I0l", "M", "ZH0l", "Ml", "KH", "B0l", "Nl", "DZ", "TSH0l", 
-                 "DZ0", "O0", "V0l", "K0l", "E0l", "T", "J0", "Z", "L0l", "L", "P", "I0", "N0l", 
-                 "Fl", "V0", "Z0", "N", "Tl", "P0l", "DZH0", "El", "Bl", "S0", "KH0l", "Al", "L0", 
-                 "D0", "O", "G0l", "N0", "T0", "GHl", "O0l", "R0", "R0l", "Dl", "Sl", "T0l", "P0", 
-                 "Y", "Ul", "Yl", "TSH", "B0", "Gl", "Z0l", "Vl", "M0", "Zl", "Rl", "A0l", "Y0l", "R", 
-                 "DZH0l", "S"]
-  cleaners:
-    - _target_: RussianTextNormalizer
-    - _target_: LowerCaseCleaner
-    - _target_: VocabCleaner
+  transforms:
+    - _target_: transforms.text.LowerCaseTransform
+    - _target_: transforms.text.VocabCleanerTransform
       vocab: &graphemes_vocab [" ", ",", ",", ".", "!", "-", ":",
                                "а", "б", "в", "г", "д", "е", "ж", "з", 
                                "и", "й", "к", "л", "м", "н", "о", "п", 
                                "р", "с", "т", "у", "ф", "х", "ц", "ч", 
                                "ш", "щ", "ъ", "ы", "ь", "э", "ю", "я"]
-  g2p:
-    _target_: RussianG2P
+    - _target_: transforms.text.G2PTransform
 
 
 audio_processor:
-  _target_: AudioProcessor
+  _target_: processors.audio.AudioProcessor
   batch_size: 1
+  sample_rate: *sample_rate
   transforms:
-    - _target_: AudioTrimmer
+    - _target_: transforms.audio.AudioTrimmer
       sample_rate: *sample_rate
       trim_front_params: 
         trigger_level: 7.0
@@ -60,85 +58,74 @@ audio_processor:
 
 
 forced_alignenment_processor:
-  _target_: MontrealForcedAlignerProcessor
-
-
-duration_processor:
-  _target_: DurationsProcessor
+  _target_: processors.forced_aligner.MontrealForcedAlignerProcessor
 
 
 feature_processor:
-  _target_: FeaturesProcessor
+  _target_: processors.features.FeaturesProcessor
   batch_size: 5
-  wav_max_value: 32768
-  mel_extractor:
-    _target_: MelExtractor
-    sample_rate: *sample_rate
-    n_fft: &n_fft 1024
-    n_mels: &n_mels 80
-    f_min: 10
-    f_max: 8000
-    win_length: &win_length 1024
-    hop_length: &hop_length 256
-    power: 1.0
+  transforms:
+    - _target_: transforms.features.MelExtractor
+      wav_max_value: 32768
+      sample_rate: *sample_rate
+      n_fft: &n_fft 1024
+      n_mels: &n_mels 80
+      f_min: 10
+      f_max: 8000
+      win_length: &win_length 1024
+      hop_length: &hop_length 256
+      power: 1.0
 
 
-##############################################
-#          DATA PROCESSING PARAMETERS        #
-##############################################
-#   In this section we are setuping order of #
-#   processor calling. Also we select        #
-#   input and output files of processor work.#
-#   Preprocessing script will call           #
-#   "process_files" method of processor      #
-#   with the specified parameters            #
-##############################################
+##################################################################
+#                  DATA PROCESSING PARAMETERS                    #
+##################################################################
+#   In this section we are setuping order of processor calling.  # 
+#   Also we select input and output files of processor work.     #
+#   Preprocessing script will call "process_files" method of     #
+#   processor with the specified parameters.                     #
+##################################################################
 
 dataset_preprocessing_params:
   verbose: true
   processors:
-    text_processor:
-      inputs:
-        metadata_path: "./downloads/metadata.csv"
-      outputs:
-        metadata_path: "./data/metadata.csv"
-        word_to_phonemes_dictionary_path: "./data/dictionary.txt"
-      
-    audio_processor:
-      inputs:
-        metadata_path: "./data/metadata.csv"
-        wavs_path: "./downloads/wavs"
-      outputs:
-        metadata_path: "./data/metadata.csv"
-        wavs_path: "./data/wavs"
+    # reader_processor:
+    #   inputs:
+    #     metadata_path: "./downloads/metadata.csv"
+    #   outputs:
+    #     corpus_path: "./data/corpus.jsonlines"
+  
+    # text_processor:
+    #   inputs:
+    #     corpus_path: "./data/corpus.jsonlines"
+    #   outputs:
+    #     corpus_path: "./data/corpus.jsonlines"
+  
+    # audio_processor:
+    #   inputs:
+    #     corpus_path: "./data/corpus.jsonlines"
+    #     wavs_path: "./downloads/wavs"
+    #   outputs:
+    #     corpus_path: "./data/corpus.jsonlines"
+    #     wavs_path: "./data/wavs"
 
     forced_alignenment_processor:
       inputs:
-        metadata_path: "./data/metadata.csv"
+        corpus_path: "./data/corpus.jsonlines"
         wavs_path: "./data/wavs"
-        word_to_phonemes_dictionary_path: "./data/dictionary.txt"
+        pronounce_dictionary: "./data/dictionary.txt"
       outputs:
-        corpus_path: "./data/wavs"
+        corpus_path: "./data/aligned_corpus.jsonlines"
+        wavs_path: "./data/aligned_wavs"
+        pronounce_dictionary: "./data/dictionary.txt"
         textgrids_path: "./data/textgrids"
-
-    duration_processor:
-      inputs:
-        metadata_path: "./data/metadata.csv"
-        textgrids_path: "./data/textgrids"
-        hop_length: *hop_length
-      outputs:
-        metadata_path: "./data/metadata.csv"
-        durations_path: "./data/durations"
 
     feature_processor:
       inputs:
-        metadata_path: "./data/metadata.csv"
+        corpus_path: "./data/corpus.jsonlines"
         wavs_path: "./data/wavs"
       outputs:
-        mels_path: &mel_path "./data/mels"
-        speakers_embeddings_path: "./data/speakers_embeddings"
-        prosodies_path: "./data/prosodies/"
-
+        features_path: "./data/features"
 
 ##############################################
 #           TRAINING PARAMETERS              #

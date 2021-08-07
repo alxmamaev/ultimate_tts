@@ -34,7 +34,7 @@ class TTSInference:
         for i, text in enumerate(texts):
             text = self.text_preprocessor(text)
             text = torch.LongTensor(text)
-            
+
             item = {"text": text}
             if mels is not None:
                 item["mel"] = mels[i]
@@ -59,16 +59,20 @@ class GriffinlimVocoderInference:
         self.config = config
 
         feature_extractor_params = config["feature_extractor_params"]
-        self.invert_mel = taudio.transforms.InverseMelScale(n_stft=feature_extractor_params["n_fft"] // 2 + 1,
-                                                            n_mels=feature_extractor_params["n_mels"],
-                                                            sample_rate=feature_extractor_params["sample_rate"],
-                                                            f_min=feature_extractor_params["f_min"],
-                                                            f_max=feature_extractor_params["f_max"])
-        
-        self.griffin_lim = taudio.transforms.GriffinLim(n_fft=feature_extractor_params["n_fft"],
-                                                        win_length=feature_extractor_params["win_length"],
-                                                        hop_length=feature_extractor_params["hop_length"],
-                                                        power=feature_extractor_params["power"])
+        self.invert_mel = taudio.transforms.InverseMelScale(
+            n_stft=feature_extractor_params["n_fft"] // 2 + 1,
+            n_mels=feature_extractor_params["n_mels"],
+            sample_rate=feature_extractor_params["sample_rate"],
+            f_min=feature_extractor_params["f_min"],
+            f_max=feature_extractor_params["f_max"],
+        )
+
+        self.griffin_lim = taudio.transforms.GriffinLim(
+            n_fft=feature_extractor_params["n_fft"],
+            win_length=feature_extractor_params["win_length"],
+            hop_length=feature_extractor_params["hop_length"],
+            power=feature_extractor_params["power"],
+        )
 
     def __call__(self, mels):
         inverted_mels = self.invert_mel(mels.transpose(1, 2))

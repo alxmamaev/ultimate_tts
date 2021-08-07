@@ -9,3 +9,5 @@ keras >= 2.1.4,<2.4.0
 tensorflow==1.15
 h5py==2.10.0
 TextGrid==1.5
+nltk==3.6.2
+TextGrid==1.5

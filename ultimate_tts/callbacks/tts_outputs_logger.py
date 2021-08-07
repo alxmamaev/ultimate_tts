@@ -7,10 +7,7 @@ from typing import List
 
 
 class TTSOutputsLogger(Callback):
-    def __init__(
-        self,
-        outputs_keys: List[str]
-    ):
+    def __init__(self, outputs_keys: List[str]):
         super().__init__(CallbackOrder.metric, CallbackNode.all)
         self.outputs_keys = outputs_keys
 

@@ -1,7 +1,8 @@
 from collections import OrderedDict
 from functools import partial
 
-from ..dataset import TextMelDataset, text_mel_collate_fn
+from ..data.dataset import TextMelDataset, text_mel_collate_fn
+
 # from ..utils.text.preprocessor import TextPreprocessor
 
 from catalyst import utils
@@ -31,23 +32,26 @@ class TTSRunner(SupervisedConfigRunner):
     def get_datasets(self, stage: str):
         datasets = OrderedDict()
         data_params = self._config["data_params"]
-        
-        datasets["train"] = TextMelDataset(data_params["train_metadata"],
-                                           data_params["mels_datapath"],
-                                           data_params["vocab"],
-                                           durations_datapath=data_params.get("durations_datapath"))
 
-        datasets["valid"] = TextMelDataset(data_params["valid_metadata"],
-                                           data_params["mels_datapath"],
-                                           data_params["vocab"],
-                                           durations_datapath=data_params.get("durations_datapath"))
+        datasets["train"] = TextMelDataset(
+            data_params["train_metadata"],
+            data_params["mels_datapath"],
+            data_params["vocab"],
+            durations_datapath=data_params.get("durations_datapath"),
+        )
+
+        datasets["valid"] = TextMelDataset(
+            data_params["valid_metadata"],
+            data_params["mels_datapath"],
+            data_params["vocab"],
+            durations_datapath=data_params.get("durations_datapath"),
+        )
 
         return datasets
 
-
     def get_loaders(self, stage: str):
         loaders_params = dict(self._stage_config[stage]["loaders"])
-        
+
         loaders_params["train"]["collate_fn"] = self.get_collate_fn()
         loaders_params["valid"]["collate_fn"] = self.get_collate_fn()
 

@@ -1,12 +1,16 @@
 version: '3.4'
 
 services:
-  ultimate_tts:
+  ultimate_tts_gpu:
     image: ultimate_tts
     stdin_open: true
     tty: true
     volumes:
       - .:/ultimate_tts
+
+    environment:
+      - ULTIMATE_TTS_DIR=/ultimate_tts
+
     deploy:
       resources:
         reservations:
@@ -16,9 +20,20 @@ services:
             capabilities: [gpu]  
     build:
       context: .
-      dockerfile: ./Dockerfile
-    # command: conda run --no-capture-output -n ultimate_tts /bin/sh "/ultimate_tts/train.sh"
+      dockerfile: ./Dockerfile.gpu
+
+  ultimate_tts_cpu:
+    image: ultimate_tts
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/ultimate_tts
+    environment:
+      - ULTIMATE_TTS_DIR=/ultimate_tts
+    build:
+      context: .
+      dockerfile: ./Dockerfile.cpu
 
   
-volumes:
-  ultimate_tts:
+# volumes:
+#   ultimate_tts:

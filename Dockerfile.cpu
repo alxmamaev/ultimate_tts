@@ -1,0 +1,20 @@
+FROM continuumio/miniconda3
+LABEL Name=ultimatetts Version=0.0.1
+
+RUN apt-get -y update && apt install git gcc g++ libsndfile-dev libopenblas-dev sox -y
+COPY requirements.txt .
+
+# Install Montreal Forced Aligner
+RUN conda create -n ultimate_tts -c conda-forge openblas python=3.7 openfst pynini ngram baumwelch 
+SHELL ["conda", "run", "--no-capture-output", "-n", "ultimate_tts", "/bin/bash", "-c"]
+
+# Install ultimate_tts requirements
+RUN conda install pytorch==1.8.0 torchaudio==0.8.0 -c pytorch -y
+RUN pip install --default-timeout=1000 -r requirements.txt 
+RUN python3 -c "import nltk; nltk.download(\"punkt\")"
+
+RUN git clone https://github.com/MontrealCorpusTools/Montreal-Forced-Aligner && cd ./Montreal-Forced-Aligner && pip3 install -r requirements.txt && python3 setup.py install
+RUN mfa thirdparty download
+RUN git clone https://github.com/kaldi-asr/kaldi /kaldi
+RUN mfa thirdparty kaldi /kaldi
+RUN mfa download acoustic russian
